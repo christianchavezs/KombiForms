@@ -1,0 +1,29 @@
+<?php
+namespace App\Models;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Pregunta extends Model
+{
+    use HasFactory;
+
+    protected $table = 'preguntas';
+
+    protected $fillable = [
+        'seccion_id','tipo','texto','obligatoria','orden','escala_min','escala_max'
+    ];
+
+    protected $casts = [
+        'obligatoria' => 'boolean'
+    ];
+
+    public function seccion()
+    {
+        return $this->belongsTo(Seccion::class, 'seccion_id');
+    }
+
+    public function opciones()
+    {
+        return $this->hasMany(Opcion::class, 'pregunta_id')->orderBy('id','asc');
+    }
+}
