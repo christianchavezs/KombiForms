@@ -1,242 +1,395 @@
 // resources/js/formbuilder/formbuilder.js
-// =====================================
-// Form builder autónomo (Google Forms style)
-// Evita dependencias frágiles de imports externos.
-// =====================================
+// ======================================================
+// Form Builder estable (versión Alpine) — 2025
+// Incluye preview() y renderPregunta() para uso directo desde Blade
+// ======================================================
 
+// ------------------------ UID -------------------------
 function uid(prefix = '') {
-    return prefix + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2,5);
+    return prefix + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 6);
 }
 
-// ---------- helpers para crear estructura inicial ----------
-function createQuestion(text = 'Nueva pregunta') {
-    return {
-        id: uid('q-'),
-        tipo: 'texto_corto', // valores usados en tus vistas: texto_corto, parrafo, opcion_unica, varias_opciones, desplegable, escala_lineal, cuadricula_unica, cuadricula_multiple, fecha, hora
-        texto: text,
-        obligatoria: false,
-        escala_min: 1,
-        escala_max: 5,
-        opciones: [],   // { id, texto, fila?, columna? }
-        filas: [],
-        columnas: []
-    };
-}
-
-function createSection(title = 'Nueva sección') {
-    return {
-        id: uid('s-'),
-        titulo: title,
-        descripcion: '',
-        preguntas: [ createQuestion('Pregunta 1') ]
-    };
-}
-
-// ---------- lista simple de tipos para usar en selects (puede ampliarse) ----------
-const questionTypes = [
-    { value: 'texto_corto', label: 'Respuesta corta' },
-    { value: 'parrafo', label: 'Párrafo' },
-    { value: 'opcion_unica', label: 'Opción múltiple' },
-    { value: 'varias_opciones', label: 'Casillas (checkbox)' },
-    { value: 'desplegable', label: 'Desplegable' },
-    { value: 'escala_lineal', label: 'Escala lineal' },
-    { value: 'cuadricula_unica', label: 'Cuadrícula de opciones' },
-    { value: 'cuadricula_multiple', label: 'Cuadrícula (casillas)' },
-    { value: 'fecha', label: 'Fecha' },
-    { value: 'hora', label: 'Hora' }
+// ------------------------ TIPOS -----------------------
+const QUESTION_TYPES = [
+    { value: 'texto_corto',       label: 'Respuesta corta' },
+    { value: 'parrafo',           label: 'Párrafo' },
+    { value: 'opcion_multiple',   label: 'Opción múltiple' },
+    { value: 'casillas',          label: 'Casillas (checkbox)' },
+    { value: 'desplegable',       label: 'Desplegable' },
+    { value: 'escala_lineal',     label: 'Escala lineal' },
+    { value: 'cuadricula_opciones', label: 'Cuadrícula de opciones' },
+    { value: 'cuadricula_casillas', label: 'Cuadrícula casillas' },
 ];
 
-// ---------- export: fábrica que Alpine usará con x-data="formBuilder(initial, formId)" ----------
+// ---------------------- CREAR PREGUNTA ----------------
+function createQuestion(text = "Nueva pregunta") {
+    return {
+        id: uid("q-"),
+        tipo: 'texto_corto',
+        texto: text,
+        obligatoria: false,
+
+        // escala
+        escala_min: 1,
+        escala_max: 5,
+
+        // opciones
+        opciones: [],
+
+        // cuadrícula
+        filas: [],
+        columnas: [],
+    };
+}
+
+// ----------------------- CREAR SECCIÓN ----------------
+function createSection(title = "Nueva sección") {
+    return {
+        id: uid("s-"),
+        titulo: title,
+        descripcion: "",
+        preguntas: [createQuestion("Pregunta 1")]
+    };
+}
+
+// ---------------------- DEEP CLONE ---------------------
+function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+// ======================================================
+// EXPORT PRINCIPAL PARA ALPINE
+// ======================================================
+
 export function formBuilder(initialSections = [], formId = null) {
-    // normaliza incoming initialSections (evita referencias inesperadas)
-    const normalized = Array.isArray(initialSections) && initialSections.length
-        ? JSON.parse(JSON.stringify(initialSections))
-        : [ createSection('Sección 1') ];
+
+    const sections = Array.isArray(initialSections) && initialSections.length
+        ? deepClone(initialSections)
+        : [createSection("Sección 1")];
 
     return {
-        formId: formId || null,
-        secciones: normalized,
+        formId: formId ?? null,
+        secciones: sections,
         seleccionado: { seccion: null, pregunta: null },
 
-        // getter para tipos (utilizar en template)
         get tipos() {
-            return questionTypes;
+            return QUESTION_TYPES;
         },
 
-        // ---------------- sections ----------------
+        // ------------------------------
+        // Helper: normalize question structure after type change
+        // ------------------------------
+        _ensureStructureForTipo(q, tipo) {
+            // initialize fields to safe defaults
+            q.opciones = Array.isArray(q.opciones) ? q.opciones : [];
+            q.filas = Array.isArray(q.filas) ? q.filas : [];
+            q.columnas = Array.isArray(q.columnas) ? q.columnas : [];
+            q.escala_min = q.escala_min ?? 1;
+            q.escala_max = q.escala_max ?? 5;
+
+            if (['opcion_multiple', 'casillas', 'desplegable'].includes(tipo)) {
+                if (!q.opciones.length) {
+                    q.opciones = [
+                        { id: uid("o-"), texto: 'Opción 1' },
+                        { id: uid("o-"), texto: 'Opción 2' }
+                    ];
+                }
+            } else {
+                // not choice-like -> keep opciones empty
+                q.opciones = q.opciones.length ? q.opciones : [];
+            }
+
+            if (tipo === "escala_lineal") {
+                q.escala_min = q.escala_min ?? 1;
+                q.escala_max = q.escala_max ?? 5;
+            }
+
+            if (['cuadricula_opciones', 'cuadricula_casillas'].includes(tipo)) {
+                if (!q.filas.length) q.filas = [{ id: uid("f-"), texto: "Fila 1" }];
+                if (!q.columnas.length) q.columnas = [{ id: uid("c-"), texto: "Columna 1" }];
+            } else {
+                // if switched away from grid, keep filas/columnas if present or clear? Keep them for data safety.
+                q.filas = q.filas.length ? q.filas : [];
+                q.columnas = q.columnas.length ? q.columnas : [];
+            }
+        },
+
+        // ------------------------------
+        // PREVIEW: texto corto resumen (usado en Blade: x-html="preview(pregunta)")
+        // ------------------------------
+        preview(p) {
+            if (!p || !p.tipo) return "";
+            switch (p.tipo) {
+                case "texto_corto":
+                    return "📝 Respuesta corta";
+                case "parrafo":
+                    return "📄 Respuesta larga";
+                case "opcion_multiple":
+                    return `🔘 Opción múltiple (${p.opciones?.length ?? 0} opciones)`;
+                case "casillas":
+                    return `☑️ Casillas (${p.opciones?.length ?? 0} opciones)`;
+                case "desplegable":
+                    return `⬇️ Desplegable (${p.opciones?.length ?? 0} opciones)`;
+                case "escala_lineal":
+                    return `📊 Escala ${p.escala_min ?? 1} – ${p.escala_max ?? 5}`;
+                case "cuadricula_opciones":
+                    return `🧩 Cuadrícula (radios) ${p.filas?.length ?? 0}×${p.columnas?.length ?? 0}`;
+                case "cuadricula_casillas":
+                    return `🧩 Cuadrícula (checks) ${p.filas?.length ?? 0}×${p.columnas?.length ?? 0}`;
+                default:
+                    return "Tipo no reconocido";
+            }
+        },
+
+        // ------------------------------
+        // renderPregunta: HTML de vista previa por pregunta (usado en Blade con x-html si quieres)
+        // ------------------------------
+        renderPregunta(p) {
+            if (!p || !p.tipo) return "";
+            // Aseguramos estructura antes de render
+            this._ensureStructureForTipo(p, p.tipo);
+
+            switch (p.tipo) {
+                case 'texto_corto':
+                    return `<input type="text" class="w-full border p-2 rounded" placeholder="Respuesta corta" disabled>`;
+                case 'parrafo':
+                    return `<textarea class="w-full border p-2 rounded" rows="3" disabled placeholder="Respuesta larga"></textarea>`;
+                case 'opcion_multiple':
+                    return (p.opciones || []).map(o => `
+                        <label class="flex items-center gap-2">
+                            <input type="radio" disabled>
+                            <span>${o.texto ?? 'Opción'}</span>
+                        </label>
+                    `).join('');
+                case 'casillas':
+                    return (p.opciones || []).map(o => `
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" disabled>
+                            <span>${o.texto ?? 'Opción'}</span>
+                        </label>
+                    `).join('');
+                case 'desplegable':
+                    return `<select class="w-full border p-2 rounded" disabled>
+                        ${(p.opciones || []).map(o => `<option>${o.texto ?? 'Opción'}</option>`).join('')}
+                    </select>`;
+                case 'escala_lineal': {
+                    const min = Number(p.escala_min ?? 1);
+                    const max = Number(p.escala_max ?? 5);
+                    let items = '';
+                    for (let i = min; i <= max; i++) {
+                        items += `<label class="flex items-center gap-2"><input type="radio" disabled> <span>${i}</span></label>`;
+                    }
+                    return `<div class="flex gap-2">${items}</div>`;
+                }
+                case 'cuadricula_opciones':
+                case 'cuadricula_casillas': {
+                    const filas = p.filas || [];
+                    const columnas = p.columnas || [];
+                    if (!filas.length || !columnas.length) {
+                        return `<div class="text-sm text-gray-500">Agrega filas/columnas para ver la cuadrícula</div>`;
+                    }
+                    const type = p.tipo === 'cuadricula_opciones' ? 'radio' : 'checkbox';
+                    let html = `<table class="w-full border-collapse text-center"><tr><th></th>${columnas.map(c => `<th class="p-1 border">${c.texto ?? ''}</th>`).join('')}</tr>`;
+                    filas.forEach(f => {
+                        html += `<tr><th class="text-left p-1 border">${f.texto ?? ''}</th>`;
+                        columnas.forEach(() => {
+                            html += `<td class="p-1 border"><input type="${type}" disabled></td>`;
+                        });
+                        html += `</tr>`;
+                    });
+                    html += `</table>`;
+                    return html;
+                }
+                default:
+                    return `<em>Tipo no soportado: ${p.tipo}</em>`;
+            }
+        },
+
+        // ==================================================
+        // SECCIONES
+        // ==================================================
         addSection() {
             const n = this.secciones.length + 1;
             this.secciones.push(createSection(`Sección ${n}`));
         },
 
         removeSection(index) {
-            if (!Number.isInteger(index) || index < 0 || index >= this.secciones.length) return;
             if (this.secciones.length === 1) {
-                alert('Debe haber al menos una sección');
+                alert("Debe haber al menos una sección.");
                 return;
             }
             this.secciones.splice(index, 1);
-            // actualizar selección si corresponde
-            if (this.seleccionado.seccion === index) {
-                this.seleccionado.seccion = null;
-                this.seleccionado.pregunta = null;
-            }
+            this.seleccionado = { seccion: null, pregunta: null };
         },
 
         selectSection(index) {
-            if (!Number.isInteger(index)) return;
-            this.seleccionado.seccion = index;
-            this.seleccionado.pregunta = null;
+            this.seleccionado = { seccion: index, pregunta: null };
         },
 
-        // ---------------- preguntas ----------------
+        // ==================================================
+        // PREGUNTAS
+        // ==================================================
         addPregunta(secIndex) {
-            if (!Number.isInteger(secIndex) || !this.secciones[secIndex]) {
-                alert('Selecciona una sección primero');
-                return;
-            }
-            const q = createQuestion(`Pregunta ${this.secciones[secIndex].preguntas.length + 1}`);
-            this.secciones[secIndex].preguntas.push(q);
-            this.seleccionado.pregunta = this.secciones[secIndex].preguntas.length - 1;
-            this.seleccionado.seccion = secIndex;
-        },
-
-        addPreguntaToCurrent() {
-            if (this.seleccionado.seccion === null) {
-                alert('Selecciona una sección primero');
-                return;
-            }
-            this.addPregunta(this.seleccionado.seccion);
+            const sec = this.secciones[secIndex];
+            const q = createQuestion(`Pregunta ${sec.preguntas.length + 1}`);
+            sec.preguntas.push(q);
+            this.selectPregunta(secIndex, sec.preguntas.length - 1);
         },
 
         selectPregunta(secIndex, pregIndex) {
-            if (!this.secciones[secIndex] || !this.secciones[secIndex].preguntas[pregIndex]) return;
-            this.seleccionado.seccion = secIndex;
-            this.seleccionado.pregunta = pregIndex;
+            this.seleccionado = { seccion: secIndex, pregunta: pregIndex };
         },
 
         duplicatePregunta(secIndex, pregIndex) {
-            if (!this.seleccionado || this.seleccionado.seccion === null || this.seleccionado.pregunta === null) {
-                alert('Selecciona una pregunta a duplicar');
-                return;
+            const sec = this.secciones[secIndex];
+            const original = sec.preguntas[pregIndex];
+            if (!original) return;
+
+            const clone = deepClone(original);
+            clone.id = uid("q-");
+
+            if (clone.opciones?.length) {
+                clone.opciones = clone.opciones.map(o => ({ ...o, id: uid("o-") }));
             }
-            const original = this.secciones[secIndex].preguntas[pregIndex];
-            const copy = JSON.parse(JSON.stringify(original));
-            copy.id = uid('q-');
-            // también regenerar ids de opciones
-            copy.opciones = (copy.opciones || []).map(o => ({ ...o, id: uid('o-') }));
-            this.secciones[secIndex].preguntas.splice(pregIndex + 1, 0, copy);
+            if (clone.filas?.length) {
+                clone.filas = clone.filas.map(f => ({ ...f, id: uid("f-") }));
+            }
+            if (clone.columnas?.length) {
+                clone.columnas = clone.columnas.map(c => ({ ...c, id: uid("c-") }));
+            }
+
+            sec.preguntas.splice(pregIndex + 1, 0, clone);
+            this.selectPregunta(secIndex, pregIndex + 1);
+
+            // Forzar rebind visual del select en Alpine
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(() => {
+                    const q = sec.preguntas[pregIndex + 1];
+                    q.tipo = q.tipo;
+                });
+            } else {
+                setTimeout(() => {
+                    const q = sec.preguntas[pregIndex + 1];
+                    if (q) q.tipo = q.tipo;
+                }, 0);
+            }
         },
 
         removePregunta(secIndex, pregIndex) {
-            if (!this.secciones[secIndex] || !this.secciones[secIndex].preguntas[pregIndex]) return;
             this.secciones[secIndex].preguntas.splice(pregIndex, 1);
-            // ajustar seleccionado
-            if (this.seleccionado.pregunta === pregIndex) {
-                this.seleccionado.pregunta = null;
-            }
+            this.seleccionado.pregunta = null;
         },
 
-        // ---------------- opciones ----------------
-        isChoice(pregunta) {
-            return ['opcion_unica','varias_opciones','desplegable'].includes(pregunta.tipo);
+        // ==================================================
+        // OPCIONES
+        // ==================================================
+        isChoice(q) {
+            return ['opcion_multiple', 'casillas', 'desplegable'].includes(q.tipo);
         },
 
         addOption(secIndex, pregIndex) {
-            const q = this.secciones[secIndex]?.preguntas?.[pregIndex];
-            if (!q) return;
-            if (!Array.isArray(q.opciones)) q.opciones = [];
-            q.opciones.push({ id: uid('o-'), texto: `Opción ${q.opciones.length + 1}` });
+            const q = this.secciones[secIndex].preguntas[pregIndex];
+            if (!q.opciones) q.opciones = [];
+            q.opciones.push({ id: uid("o-"), texto: `Opción ${q.opciones.length + 1}` });
         },
 
         removeOption(secIndex, pregIndex, optIndex) {
-            const q = this.secciones[secIndex]?.preguntas?.[pregIndex];
-            if (!q || !Array.isArray(q.opciones)) return;
+            const q = this.secciones[secIndex].preguntas[pregIndex];
+            if (!q.opciones) return;
             q.opciones.splice(optIndex, 1);
         },
 
+        // ==================================================
+        // CAMBIO DE TIPO
+        // ==================================================
         changeTipo(secIndex, pregIndex, tipo) {
-            const q = this.secciones[secIndex]?.preguntas?.[pregIndex];
+            const q = this.secciones[secIndex].preguntas[pregIndex];
             if (!q) return;
+
             q.tipo = tipo;
 
-            if (['opcion_unica','varias_opciones','desplegable'].includes(tipo)) {
-                if (!Array.isArray(q.opciones) || q.opciones.length === 0) {
+            // Reinicializamos estructura acorde al tipo (esto evita inconsistencias)
+            q.opciones = q.opciones ?? [];
+            q.filas = q.filas ?? [];
+            q.columnas = q.columnas ?? [];
+            q.escala_min = q.escala_min ?? 1;
+            q.escala_max = q.escala_max ?? 5;
+
+            // Acomodar valores según tipo
+            if (['opcion_multiple', 'casillas', 'desplegable'].includes(tipo)) {
+                if (!q.opciones.length) {
                     q.opciones = [
-                        { id: uid('o-'), texto: 'Opción 1' },
-                        { id: uid('o-'), texto: 'Opción 2' }
+                        { id: uid("o-"), texto: 'Opción 1' },
+                        { id: uid("o-"), texto: 'Opción 2' }
                     ];
                 }
             } else {
-                // limpiar opciones si el tipo no las necesita
-                q.opciones = [];
+                // si no es tipo de opciones, mantenemos array vacío
+                q.opciones = q.opciones.length ? q.opciones : [];
             }
 
-            if (tipo === 'escala_lineal') {
+            if (tipo === "escala_lineal") {
                 q.escala_min = q.escala_min ?? 1;
                 q.escala_max = q.escala_max ?? 5;
             }
-            if (tipo === 'cuadricula_unica' || tipo === 'cuadricula_multiple') {
-                q.filas = q.filas && q.filas.length ? q.filas : ['Fila 1'];
-                q.columnas = q.columnas && q.columnas.length ? q.columnas : ['Columna 1'];
+
+            if (['cuadricula_opciones', 'cuadricula_casillas'].includes(tipo)) {
+                if (!q.filas.length) q.filas = [{ id: uid("f-"), texto: "Fila 1" }];
+                if (!q.columnas.length) q.columnas = [{ id: uid("c-"), texto: "Columna 1" }];
+            } else {
+                q.filas = q.filas.length ? q.filas : [];
+                q.columnas = q.columnas.length ? q.columnas : [];
+            }
+
+            // Forzamos re-render visual si es necesario
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(() => {
+                    // no-op: setting tipo ensures binding
+                    q.tipo = tipo;
+                });
             }
         },
 
-        // ---------------- preview (usa la estructura básica) ----------------
-        preview(pregunta) {
-            // simple preview fallback (puedes conectarlo luego a tu render.js)
-            if (!pregunta) return '';
-            switch (pregunta.tipo) {
-                case 'texto_corto': return `<input type="text" class="w-full border p-2" disabled>`;
-                case 'parrafo': return `<textarea class="w-full border p-2" rows="3" disabled></textarea>`;
-                case 'opcion_unica':
-                    return (pregunta.opciones || []).map(o => `<label class="flex items-center gap-2"><input type="radio" disabled><span>${o.texto}</span></label>`).join('');
-                case 'varias_opciones':
-                    return (pregunta.opciones || []).map(o => `<label class="flex items-center gap-2"><input type="checkbox" disabled><span>${o.texto}</span></label>`).join('');
-                case 'desplegable':
-                    return `<select class="border p-2 w-full" disabled>${(pregunta.opciones || []).map(o => `<option>${o.texto}</option>`).join('')}</select>`;
-                case 'escala_lineal':
-                    let items = '';
-                    for (let i = (pregunta.escala_min || 1); i <= (pregunta.escala_max || 5); i++) {
-                        items += `<label class="flex items-center gap-1"><input type="radio" disabled>${i}</label>`;
-                    }
-                    return `<div class="flex gap-2">${items}</div>`;
-                default:
-                    return `<em>Vista previa</em>`;
-            }
-        },
-
-        // ---------------- guardar (envío estructurado) ----------------
+        // ==================================================
+        // GUARDAR
+        // ==================================================
         async guardar() {
-            // si formId no está seteado, intenta buscarlo en window (opcional)
-            const fid = this.formId || (window && window.currentFormId) || null;
-            if (!fid) {
-                alert('formId no especificado. No se guardará.');
-                return;
-            }
+            if (!this.formId) return alert("No hay formId definido.");
 
-            const payload = { estructura: this.secciones };
+            const estructura = this.secciones.map((sec, si) => ({
+                titulo: sec.titulo,
+                descripcion: sec.descripcion,
+                orden: si + 1,
+                preguntas: sec.preguntas.map((p, pi) => ({
+                    tipo: p.tipo,
+                    texto: p.texto,
+                    obligatorio: p.obligatoria ? 1 : 0,
+                    orden: pi + 1,
+                    escala_min: p.escala_min,
+                    escala_max: p.escala_max,
+                    filas: p.filas ?? [],
+                    columnas: p.columnas ?? [],
+                    opciones: (p.opciones ?? []).map((o, oi) => ({
+                        texto: o.texto,
+                        orden: oi + 1
+                    }))
+                }))
+            }));
 
             try {
-                const response = await fetch(`/formularios/${fid}/estructura`, {
-                    method: 'POST',
+                const resp = await fetch(`/formularios/${this.formId}/estructura`, {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ estructura })
                 });
 
-                if (!response.ok) {
-                    const txt = await response.text().catch(()=>null);
-                    throw new Error(`${response.status} ${txt || response.statusText}`);
-                }
-
-                const data = await response.json();
-                alert(data.message || 'Guardado correctamente');
+                if (!resp.ok) throw new Error(await resp.text());
+                alert("Guardado correctamente.");
             } catch (err) {
-                console.error(err);
-                alert('Error al guardar: ' + (err.message || 'desconocido'));
+                alert("Error al guardar: " + err.message);
             }
         }
     };
