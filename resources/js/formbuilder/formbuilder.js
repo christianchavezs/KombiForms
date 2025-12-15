@@ -175,31 +175,108 @@ export function formBuilder(initialSections = [], formId = null) {
                 case 'escala_lineal': {
                     const min = Number(p.escala_min ?? 1);
                     const max = Number(p.escala_max ?? 5);
-                    let items = '';
+                    const labelMin = p.etiqueta_min ?? '';
+                    const labelMax = p.etiqueta_max ?? '';
+
+                    const total = max - min + 1;
+
+                    let etiquetas = '';
+                    let radios = '';
+                    let numeros = '';
+
                     for (let i = min; i <= max; i++) {
-                        items += `<label class="flex items-center gap-2"><input type="radio" disabled> <span>${i}</span></label>`;
+                        radios += `
+                            <div class="flex-1 text-center">
+                                <input type="radio" disabled>
+                            </div>
+                        `;
+
+                        numeros += `
+                            <div class="flex-1 text-center text-xs text-gray-600">
+                                ${i}
+                            </div>
+                        `;
                     }
-                    return `<div class="flex gap-2">${items}</div>`;
+
+                    // Etiquetas SOLO en extremos
+                    etiquetas = `
+                        <div class="flex">
+                            <div class="flex-1 text-left text-xs text-gray-600">
+                                ${labelMin}
+                            </div>
+                            <div class="flex-1 text-right text-xs text-gray-600">
+                                ${labelMax}
+                            </div>
+                        </div>
+                    `;
+
+                    return `
+                        <div class="space-y-2">
+                            ${etiquetas}
+                            <div class="flex gap-2">${radios}</div>
+                            <div class="flex gap-2">${numeros}</div>
+                        </div>
+                    `;
                 }
+
                 case 'cuadricula_opciones':
                 case 'cuadricula_casillas': {
                     const filas = p.filas || [];
                     const columnas = p.columnas || [];
+
                     if (!filas.length || !columnas.length) {
-                        return `<div class="text-sm text-gray-500">Agrega filas/columnas para ver la cuadrícula</div>`;
+                        return `<div class="text-sm text-gray-500">
+                            Agrega filas/columnas para ver la cuadrícula
+                        </div>`;
                     }
+
                     const type = p.tipo === 'cuadricula_opciones' ? 'radio' : 'checkbox';
-                    let html = `<table class="w-full border-collapse text-center"><tr><th></th>${columnas.map(c => `<th class="p-1 border">${c.texto ?? ''}</th>`).join('')}</tr>`;
-                    filas.forEach(f => {
-                        html += `<tr><th class="text-left p-1 border">${f.texto ?? ''}</th>`;
-                        columnas.forEach(() => {
-                            html += `<td class="p-1 border"><input type="${type}" disabled></td>`;
-                        });
-                        html += `</tr>`;
+
+                    
+                    let html = `
+                        <table class="w-full border-collapse text-center text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="border p-2"></th>
+                                    ${columnas.map(c => `
+                                        <th class="border p-2 font-medium">
+                                            ${c.texto ?? ''}
+                                        </th>
+                                    `).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    filas.forEach((f, fIndex) => {
+                        html += `
+                            <tr>
+                                <th class="border p-2 text-left font-medium">
+                                    ${f.texto ?? ''}
+                                </th>
+                                ${columnas.map((_, cIndex) => `
+                                    <td class="border p-2">
+                                        <input
+                                            type="${type}"
+                                            name="fila_${p.id}_${fIndex}"
+                                            disabled
+                                        >
+                                    </td>
+                                `).join('')}
+                            </tr>
+                        `;
                     });
-                    html += `</table>`;
+
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+
                     return html;
                 }
+
+
+                
                 default:
                     return `<em>Tipo no soportado: ${p.tipo}</em>`;
             }
