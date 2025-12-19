@@ -258,9 +258,12 @@ export function formBuilder(initialSections = [], formId = null) {
                                     <td class="border p-2">
                                         <input
                                             type="${type}"
-                                            name="fila_${p.id}_${fIndex}"
+                                            ${p.tipo === 'cuadricula_opciones'
+                                                ? `name="fila_${p.id}_${fIndex}"`
+                                                : ''}
                                             disabled
                                         >
+
                                     </td>
                                 `).join('')}
                             </tr>

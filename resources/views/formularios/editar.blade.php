@@ -38,142 +38,185 @@
     </aside>
 
     {{-- Área principal --}}
-    <main class="flex-1 p-6 space-y-6">
-        <template x-for="(seccion, sIndex) in secciones" :key="seccion.id">
-            <div class="bg-white p-6 shadow rounded relative"
-                 @click="selectSection(sIndex)">
+<main class="flex-1 p-6 space-y-6">
+    <template x-for="(seccion, sIndex) in secciones" :key="seccion.id">
+        <div
+            class="bg-white p-6 shadow rounded space-y-4"
+            @click="selectSection(sIndex)"
+        >
+
+            {{-- HEADER DE SECCIÓN --}}
+            <div class="flex justify-between items-start gap-4">
+
+                <div class="flex-1 space-y-2">
+                    <input
+                        x-model="seccion.titulo"
+                        class="text-xl font-bold border-b w-full"
+                        placeholder="Título de la sección"
+                    >
+
+                    <textarea
+                        x-model="seccion.descripcion"
+                        class="border p-2 w-full resize-none"
+                        rows="2"
+                        placeholder="Descripción de la sección"
+                    ></textarea>
+                </div>
 
                 {{-- BOTÓN ELIMINAR SECCIÓN --}}
                 <button
                     @click.stop="confirmarEliminarSeccion = sIndex"
-                    class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center
+                    class="w-9 h-9 flex items-center justify-center
                            rounded-full bg-red-600 text-white font-bold
-                           hover:bg-red-700 transition"
-                    title="Eliminar sección">
+                           hover:bg-red-700 transition shrink-0"
+                    title="Eliminar sección"
+                >
                     ✕
                 </button>
+            </div>
 
-                <input x-model="seccion.titulo"
-                       class="text-xl font-bold border-b w-full mb-4"
-                       placeholder="Título de la sección">
+            {{-- PREGUNTAS --}}
+            <template x-for="(pregunta, pIndex) in seccion.preguntas" :key="pregunta.id">
+                <div
+                    class="border p-4 rounded bg-gray-50"
+                    :class="{'ring-2 ring-indigo-300': seleccionado.seccion === sIndex && seleccionado.pregunta === pIndex}"
+                    @click.stop="selectPregunta(sIndex, pIndex)"
+                >
 
-                <textarea x-model="seccion.descripcion"
-                          class="border p-2 w-full mb-6"
-                          placeholder="Descripción de la sección"></textarea>
+                    <input
+                        x-model="pregunta.texto"
+                        class="border-b w-full font-medium mb-3"
+                        placeholder="Pregunta"
+                    >
 
-                {{-- Preguntas --}}
-                <template x-for="(pregunta, pIndex) in seccion.preguntas" :key="pregunta.id">
-                    <div class="border p-4 rounded mb-4 bg-gray-50"
-                         :class="{'ring-2 ring-indigo-300': seleccionado.seccion === sIndex && seleccionado.pregunta === pIndex}"
-                         @click.stop="selectPregunta(sIndex, pIndex)">
+                    <select
+                        x-model="pregunta.tipo"
+                        @change="changeTipo(sIndex, pIndex, pregunta.tipo)"
+                        class="border p-2 rounded mb-3 w-full"
+                    >
+                        <template x-for="tipo in tipos" :key="tipo.value">
+                            <option :value="tipo.value" x-text="tipo.label"></option>
+                        </template>
+                    </select>
 
-                        <input x-model="pregunta.texto"
-                               class="border-b w-full font-medium mb-3"
-                               placeholder="Pregunta">
-
-                        <select
-                            x-model="pregunta.tipo"
-                            @change="changeTipo(sIndex, pIndex, pregunta.tipo)"
-                            class="border p-2 rounded mb-3 w-full">
-                            <template x-for="tipo in tipos" :key="tipo.value">
-                                <option :value="tipo.value" x-text="tipo.label"></option>
+                    {{-- OPCIONES --}}
+                    <template x-if="isChoice(pregunta)">
+                        <div class="space-y-2 mb-4">
+                            <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
+                                <div class="flex gap-2">
+                                    <input x-model="op.texto" class="border p-1 rounded w-full">
+                                    <button
+                                        @click="removeOption(sIndex, pIndex, oIndex)"
+                                        class="text-red-500"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
                             </template>
-                        </select>
 
-                        {{-- OPCIONES --}}
-                        <template x-if="isChoice(pregunta)">
-                            <div class="space-y-2 mb-4">
-                                <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
-                                    <div class="flex gap-2">
-                                        <input x-model="op.texto" class="border p-1 rounded w-full">
-                                        <button @click="removeOption(sIndex, pIndex, oIndex)"
-                                                class="text-red-500">✕</button>
-                                    </div>
-                                </template>
-                                <button @click="addOption(sIndex, pIndex)"
-                                        class="text-blue-600 text-sm">
-                                    + Agregar opción
-                                </button>
+                            <button
+                                @click="addOption(sIndex, pIndex)"
+                                class="text-blue-600 text-sm"
+                            >
+                                + Agregar opción
+                            </button>
+                        </div>
+                    </template>
+
+                    {{-- ESCALA LINEAL --}}
+                    <template x-if="pregunta.tipo === 'escala_lineal'">
+                        <div class="grid grid-cols-2 gap-3 mb-4 bg-blue-50 p-3 rounded">
+                            <div>
+                                <label class="text-xs">Desde</label>
+                                <input type="number" x-model.number="pregunta.escala_min"
+                                       class="border p-1 w-full">
                             </div>
-                        </template>
 
-                        {{-- ESCALA LINEAL --}}
-                        <template x-if="pregunta.tipo === 'escala_lineal'">
-                            <div class="grid grid-cols-2 gap-3 mb-4 bg-blue-50 p-3 rounded">
-                                <div>
-                                    <label class="text-xs">Desde</label>
-                                    <input type="number" x-model.number="pregunta.escala_min"
-                                           class="border p-1 w-full">
-                                </div>
-                                <div>
-                                    <label class="text-xs">Hasta</label>
-                                    <input type="number" x-model.number="pregunta.escala_max"
-                                           class="border p-1 w-full">
-                                </div>
-                                <div>
-                                    <label class="text-xs">Etiqueta inicial</label>
-                                    <input x-model="pregunta.etiqueta_min" class="border p-1 w-full">
-                                </div>
-                                <div>
-                                    <label class="text-xs">Etiqueta final</label>
-                                    <input x-model="pregunta.etiqueta_max" class="border p-1 w-full">
-                                </div>
+                            <div>
+                                <label class="text-xs">Hasta</label>
+                                <input type="number" x-model.number="pregunta.escala_max"
+                                       class="border p-1 w-full">
                             </div>
-                        </template>
 
-                        {{-- CUADRÍCULA --}}
-                        <template x-if="['cuadricula_opciones','cuadricula_casillas'].includes(pregunta.tipo)">
-                            <div class="grid grid-cols-2 gap-4 mb-4 bg-indigo-50 p-3 rounded">
-                                <div>
-                                    <h4 class="text-sm font-semibold mb-2">Filas</h4>
-                                    <template x-for="(f, fIndex) in pregunta.filas" :key="f.id">
-                                        <div class="flex gap-2 mb-1">
-                                            <input x-model="f.texto" class="border p-1 w-full">
-                                            <button @click="pregunta.filas.splice(fIndex,1)"
-                                                    class="text-red-500">✕</button>
-                                        </div>
-                                    </template>
-                                    <button
-                                        @click="pregunta.filas.push({ id: Date.now(), texto: 'Nueva fila' })"
-                                        class="text-blue-600 text-xs mt-1">
-                                        + Agregar fila
-                                    </button>
-                                </div>
-
-                                <div>
-                                    <h4 class="text-sm font-semibold mb-2">Columnas</h4>
-                                    <template x-for="(c, cIndex) in pregunta.columnas" :key="c.id">
-                                        <div class="flex gap-2 mb-1">
-                                            <input x-model="c.texto" class="border p-1 w-full">
-                                            <button @click="pregunta.columnas.splice(cIndex,1)"
-                                                    class="text-red-500">✕</button>
-                                        </div>
-                                    </template>
-                                    <button
-                                        @click="pregunta.columnas.push({ id: Date.now(), texto: 'Nueva columna' })"
-                                        class="text-blue-600 text-xs mt-1">
-                                        + Agregar columna
-                                    </button>
-                                </div>
+                            <div>
+                                <label class="text-xs">Etiqueta inicial</label>
+                                <input x-model="pregunta.etiqueta_min" class="border p-1 w-full">
                             </div>
-                        </template>
 
-                        {{-- VISTA PREVIA --}}
-                        <div class="mt-4">
-                            <div class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
-                                Vista previa del modal de la pregunta
-                            </div>
-                            <div class="p-3 bg-white border rounded"
-                                 x-html="renderPregunta(pregunta)">
+                            <div>
+                                <label class="text-xs">Etiqueta final</label>
+                                <input x-model="pregunta.etiqueta_max" class="border p-1 w-full">
                             </div>
                         </div>
+                    </template>
 
-                        <div class="text-xs text-gray-500 mt-2" x-html="preview(pregunta)"></div>
+                    {{-- CUADRÍCULA --}}
+                    <template x-if="['cuadricula_opciones','cuadricula_casillas'].includes(pregunta.tipo)">
+                        <div class="grid grid-cols-2 gap-4 mb-4 bg-indigo-50 p-3 rounded">
+                            <div>
+                                <h4 class="text-sm font-semibold mb-2">Filas</h4>
+                                <template x-for="(f, fIndex) in pregunta.filas" :key="f.id">
+                                    <div class="flex gap-2 mb-1">
+                                        <input x-model="f.texto" class="border p-1 w-full">
+                                        <button
+                                            @click="pregunta.filas.splice(fIndex,1)"
+                                            class="text-red-500"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <button
+                                    @click="pregunta.filas.push({ id: Date.now(), texto: 'Nueva fila' })"
+                                    class="text-blue-600 text-xs mt-1"
+                                >
+                                    + Agregar fila
+                                </button>
+                            </div>
+
+                            <div>
+                                <h4 class="text-sm font-semibold mb-2">Columnas</h4>
+                                <template x-for="(c, cIndex) in pregunta.columnas" :key="c.id">
+                                    <div class="flex gap-2 mb-1">
+                                        <input x-model="c.texto" class="border p-1 w-full">
+                                        <button
+                                            @click="pregunta.columnas.splice(cIndex,1)"
+                                            class="text-red-500"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <button
+                                    @click="pregunta.columnas.push({ id: Date.now(), texto: 'Nueva columna' })"
+                                    class="text-blue-600 text-xs mt-1"
+                                >
+                                    + Agregar columna
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- VISTA PREVIA --}}
+                    <div class="mt-4">
+                        <div class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                            Vista previa del modal de la pregunta
+                        </div>
+
+                        <div
+                            class="p-3 bg-white border rounded"
+                            x-html="renderPregunta(pregunta)"
+                        ></div>
                     </div>
-                </template>
-            </div>
-        </template>
-    </main>
+
+                </div>
+            </template>
+        </div>
+    </template>
+</main>
+
 
     {{-- MODAL CONFIRMACIÓN ELIMINAR SECCIÓN --}}
     <div x-show="confirmarEliminarSeccion !== null"
