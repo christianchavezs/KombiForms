@@ -373,11 +373,20 @@ export function formBuilder(initialSections = [], formId = null) {
             q.opciones.push({ id: uid("o-"), texto: `Opción ${q.opciones.length + 1}` });
         },
 
+        
         removeOption(secIndex, pregIndex, optIndex) {
             const q = this.secciones[secIndex].preguntas[pregIndex];
-            if (!q.opciones) return;
+            if (!q || !Array.isArray(q.opciones)) return;
+
+            // No permitir eliminar la última opción
+            if (q.opciones.length <= 1) {
+                alert('Debe existir al menos una opción en la pregunta.');
+                return;
+            }
+
             q.opciones.splice(optIndex, 1);
         },
+
 
         // ==================================================
         // CAMBIO DE TIPO
@@ -429,6 +438,59 @@ export function formBuilder(initialSections = [], formId = null) {
                 });
             }
         },
+
+        // ==================================================
+        // FILAS / COLUMNAS (CUADRÍCULAS)
+        // ==================================================
+        addFila(secIndex, pregIndex) {
+            const q = this.secciones[secIndex].preguntas[pregIndex];
+            if (!q) return;
+
+            if (!Array.isArray(q.filas)) q.filas = [];
+
+            q.filas.push({
+                id: uid("f-"),
+                texto: `Fila ${q.filas.length + 1}`
+            });
+        },
+
+        removeFila(secIndex, pregIndex, filaIndex) {
+            const q = this.secciones[secIndex].preguntas[pregIndex];
+            if (!q || !Array.isArray(q.filas)) return;
+
+            if (q.filas.length <= 1) {
+                alert("Debe existir al menos una fila en la pregunta.");
+                return;
+            }
+
+            q.filas.splice(filaIndex, 1);
+        },
+
+        addColumna(secIndex, pregIndex) {
+            const q = this.secciones[secIndex].preguntas[pregIndex];
+            if (!q) return;
+
+            if (!Array.isArray(q.columnas)) q.columnas = [];
+
+            q.columnas.push({
+                id: uid("c-"),
+                texto: `Columna ${q.columnas.length + 1}`
+            });
+        },
+
+        removeColumna(secIndex, pregIndex, colIndex) {
+            const q = this.secciones[secIndex].preguntas[pregIndex];
+            if (!q || !Array.isArray(q.columnas)) return;
+
+            if (q.columnas.length <= 1) {
+                alert("Debe existir al menos una columna en la pregunta.");
+                return;
+            }
+
+            q.columnas.splice(colIndex, 1);
+        },
+
+
 
         // ==================================================
         // GUARDAR
