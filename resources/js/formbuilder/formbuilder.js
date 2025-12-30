@@ -482,6 +482,12 @@ export function formBuilder(initialSections = [], formId = null) {
                     q.tipo = tipo;
                 });
             }
+
+            // Títulos y textos nunca pueden ser obligatorios
+            if (['titulo', 'texto'].includes(tipo)) {
+                q.obligatoria = false;
+            }
+
         },
 
         // ==================================================
@@ -548,21 +554,6 @@ export function formBuilder(initialSections = [], formId = null) {
                 descripcion: sec.descripcion,
                 orden: si + 1,
 
-
-                /*preguntas: sec.preguntas.map((p, pi) => ({
-                    tipo: p.tipo,
-                    texto: p.texto,
-                    obligatorio: p.obligatoria ? 1 : 0,
-                    orden: pi + 1,
-                    escala_min: p.escala_min,
-                    escala_max: p.escala_max,
-                    filas: p.filas ?? [],
-                    columnas: p.columnas ?? [],
-                    opciones: (p.opciones ?? []).map((o, oi) => ({
-                        texto: o.texto,
-                        orden: oi + 1
-                    }))
-                }))*/
 
 
                 preguntas: sec.preguntas.map((p, pi) => ({

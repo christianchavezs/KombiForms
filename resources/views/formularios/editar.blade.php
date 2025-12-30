@@ -349,25 +349,56 @@
                             </div>
                         </template>
 
+
+
+
                         {{-- PREVIEW --}}
-                        <div class="mt-4 pt-4 border-t-2 border-gray-200">
-                            <div class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                Vista previa
-                            </div>
+                        <template x-if="!['titulo', 'texto_libre'].includes(pregunta.tipo)">
+                            <div class="mt-4 pt-4 border-t-2 border-gray-200">
+                                <div class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
+                                                -1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    Vista previa
+                                </div>
 
-                            <div class="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-inner"
-                                 x-html="renderPregunta(pregunta)">
+                                <div class="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-inner"
+                                    x-html="renderPregunta(pregunta)">
+                                </div>
                             </div>
-                        </div>
+                        </template>
 
-                    </div>
-                </template>
+                                                 <!-- OBLIGATORIA -->
+<template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
+    <div class="flex justify-end items-center gap-3 mt-4">
+        <span class="text-sm font-medium text-gray-600">
+            Obligatoria
+        </span>
+
+        <!-- Toggle -->
+        <button
+            @click="pregunta.obligatoria = !pregunta.obligatoria"
+            :class="pregunta.obligatoria ? 'bg-indigo-600' : 'bg-gray-300'"
+            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
+        >
+            <span
+                :class="pregunta.obligatoria ? 'translate-x-6' : 'translate-x-1'"
+                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"
+            ></span>
+        </button>
+    </div>
+</template>
+
+
+
             </div>
         </template>
+
+       
     </main>
 
     {{-- MODAL PARA SELECCIONAR TIPO DE PREGUNTA --}}
