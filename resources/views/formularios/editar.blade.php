@@ -190,6 +190,8 @@
                 </div>
 
                 {{-- PREGUNTAS CON BOTÓN PARA CAMBIAR TIPO VÍA MODAL --}}
+
+
                 <template x-for="(pregunta, pIndex) in seccion.preguntas" :key="pregunta.id">
                     <div
                         class="border-2 p-5 rounded-xl bg-gradient-to-br from-gray-50 to-white transition-all duration-200"
@@ -197,11 +199,7 @@
                         @click.stop="selectPregunta(sIndex, pIndex)"
                     >
 
-                        <input x-model="pregunta.texto"
-                               class="border-b-2 border-gray-300 focus:border-indigo-500 w-full font-semibold mb-4 p-2 text-lg outline-none transition-colors"
-                               placeholder="Escribe tu pregunta aquí">
-
-                        {{-- Mostrar tipo actual con botón para abrir modal --}}
+                       {{-- Mostrar tipo actual con botón para abrir modal --}}
                         <div class="mb-4 flex items-center gap-3">
                             <div class="flex-1 px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-lg">
                                 <span class="text-sm text-gray-600">Tipo: </span>
@@ -216,6 +214,37 @@
                             </button>
 
                         </div>
+
+                    <!-- TÍTULO -->
+                    <template x-if="pregunta.tipo === 'titulo'">
+                        <input
+                            x-model="pregunta.texto"
+                            placeholder="Título"
+                            class="border-b-2 border-gray-300 focus:border-indigo-500 w-full font-bold mb-4 p-2 text-3xl outline-none transition-colors"
+                        >
+                    </template>
+
+                    <!-- TEXTO LIBRE -->
+                    <template x-if="pregunta.tipo === 'texto_libre'">
+                        <textarea
+                            x-model="pregunta.texto"
+                            placeholder="Texto descriptivo"
+                            rows="3"
+                            class="border-2 border-gray-300 focus:border-indigo-500 w-full mb-4 p-3 rounded-lg outline-none transition-colors"
+                        ></textarea>
+                    </template>
+
+                    <!-- PREGUNTA NORMAL -->
+                    <template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
+                        <input
+                            x-model="pregunta.texto"
+                            placeholder="Escribe tu pregunta aquí"
+                            class="border-b-2 border-gray-300 focus:border-indigo-500 w-full font-semibold mb-4 p-2 text-lg outline-none transition-colors"
+                        >
+                    </template>
+
+
+                     
 
                         {{-- OPCIONES CON BOTÓN MEJORADO --}}
                         <template x-if="isChoice(pregunta)">
@@ -366,6 +395,31 @@
 
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 
+
+                <!-- TÍTULO -->
+                <button
+                    @click="addPreguntaConTipo('titulo')"
+                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-50 w-full text-left"
+                >
+                    <span class="text-2xl">🟣</span>
+                    <div>
+                        <div class="font-semibold">Título</div>
+                        <div class="text-sm text-gray-500">Encabezado del formulario</div>
+                    </div>
+                </button>
+
+                <!-- TEXTO -->
+                <button
+                    @click="addPreguntaConTipo('texto_libre')"
+                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-50 w-full text-left"
+                >
+                    <span class="text-2xl">📄</span>
+                    <div>
+                        <div class="font-semibold">Texto</div>
+                        <div class="text-sm text-gray-500">Texto descriptivo</div>
+                    </div>
+                </button>
+
                 {{-- Texto Corto --}}
                 <button @click="addPreguntaConTipo('texto_corto')" 
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg 

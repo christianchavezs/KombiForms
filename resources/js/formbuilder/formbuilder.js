@@ -11,6 +11,10 @@ function uid(prefix = '') {
 
 // ------------------------ TIPOS -----------------------
 const QUESTION_TYPES = [
+    { value: 'titulo',            label: 'Título' },
+    { value: 'texto',             label: 'Texto descriptivo' },
+
+
     { value: 'texto_corto',       label: 'Respuesta corta' },
     { value: 'parrafo',           label: 'Párrafo' },
     { value: 'opcion_multiple',   label: 'Opción múltiple' },
@@ -22,7 +26,7 @@ const QUESTION_TYPES = [
 ];
 
 // ---------------------- CREAR PREGUNTA ----------------
-function createQuestion(text = "Nueva pregunta") {
+/*function createQuestion(text = "Nueva pregunta") {
     return {
         id: uid("q-"),
         tipo: 'texto_corto',
@@ -40,7 +44,24 @@ function createQuestion(text = "Nueva pregunta") {
         filas: [],
         columnas: [],
     };
+}*/
+
+function createQuestion(text = "Nuevo elemento", tipo = 'texto_corto') {
+    return {
+        id: uid("q-"),
+        tipo,
+        texto: text,
+        obligatoria: false,
+
+        escala_min: 1,
+        escala_max: 5,
+
+        opciones: [],
+        filas: [],
+        columnas: [],
+    };
 }
+
 
 // ----------------------- CREAR SECCIÓN ----------------
 function createSection(title = "Nueva sección") {
@@ -120,6 +141,13 @@ export function formBuilder(initialSections = [], formId = null) {
         preview(p) {
             if (!p || !p.tipo) return "";
             switch (p.tipo) {
+                case "titulo":
+                    return "🅣 Título";
+                case "texto":
+                    return "🅣 Texto descriptivo";
+
+
+
                 case "texto_corto":
                     return "📝 Respuesta corta";
                 case "parrafo":
@@ -150,6 +178,23 @@ export function formBuilder(initialSections = [], formId = null) {
             this._ensureStructureForTipo(p, p.tipo);
 
             switch (p.tipo) {
+                
+                case 'titulo':
+                    return `
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            ${p.texto || 'Título'}
+                        </h2>
+                    `;
+
+                case 'texto':
+                    return `
+                        <p class="text-gray-700 whitespace-pre-line">
+                            ${p.texto || 'Texto descriptivo'}
+                        </p>
+                    `;
+
+
+
                 case 'texto_corto':
                     return `<input type="text" class="w-full border p-2 rounded" placeholder="Respuesta corta" disabled>`;
                 case 'parrafo':
@@ -502,7 +547,9 @@ export function formBuilder(initialSections = [], formId = null) {
                 titulo: sec.titulo,
                 descripcion: sec.descripcion,
                 orden: si + 1,
-                preguntas: sec.preguntas.map((p, pi) => ({
+
+
+                /*preguntas: sec.preguntas.map((p, pi) => ({
                     tipo: p.tipo,
                     texto: p.texto,
                     obligatorio: p.obligatoria ? 1 : 0,
@@ -515,7 +562,31 @@ export function formBuilder(initialSections = [], formId = null) {
                         texto: o.texto,
                         orden: oi + 1
                     }))
+                }))*/
+
+
+                preguntas: sec.preguntas.map((p, pi) => ({
+                    tipo: p.tipo,
+                    texto: p.texto,
+                    obligatorio: ['titulo', 'texto'].includes(p.tipo) ? 0 : (p.obligatoria ? 1 : 0),
+                    orden: pi + 1,
+
+                    escala_min: p.tipo === 'escala_lineal' ? p.escala_min : null,
+                    escala_max: p.tipo === 'escala_lineal' ? p.escala_max : null,
+
+                    filas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? p.filas : [],
+                    columnas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? p.columnas : [],
+
+                    opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
+                        ? (p.opciones ?? []).map((o, oi) => ({
+                            texto: o.texto,
+                            orden: oi + 1
+                        }))
+                        : []
                 }))
+
+
+
             }));
 
             try {
