@@ -70,7 +70,7 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-                <span class="font-bold text-lg">Constructor</span>
+                <span class="font-bold text-lg">Menú Lateral</span>
             </div>
 
             <button @click="menuColapsado = !menuColapsado"
@@ -136,7 +136,7 @@
                            hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-xl
                            shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105
                            disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 flex="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
                 <span x-show="!menuColapsado" class="font-semibold">Eliminar</span>
@@ -150,7 +150,7 @@
                            hover:from-gray-900 hover:to-black text-white px-4 py-3 rounded-xl
                            shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
                 <span x-show="!menuColapsado" class="font-bold">Guardar Formulario</span>
             </button>
@@ -189,210 +189,261 @@
                     </button>
                 </div>
 
-                {{-- PREGUNTAS CON BOTÓN PARA CAMBIAR TIPO VÍA MODAL --}}
+                {{-- Arreglado el drag & drop con manejo correcto de Alpine.js --}}
+                
+                <div
+    class="space-y-4"
+    x-ref="sortableContainer"
+    x-effect="
+        if (!$el._sortable && seccion.preguntas.length > 0) {
+            console.log('Inicializando Sortable:', seccion.titulo);
+
+            $el._sortable = Sortable.create($el, {
+                animation: 200,
+                handle: '.drag-handle',
+                draggable: '.pregunta-item',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+
+                onEnd: (evt) => {
+                    if (evt.oldIndex === evt.newIndex) return;
+
+                    const moved = seccion.preguntas.splice(evt.oldIndex, 1)[0];
+                    seccion.preguntas.splice(evt.newIndex, 0, moved);
+                }
+            });
+        }
+    "
+>
 
 
-                <template x-for="(pregunta, pIndex) in seccion.preguntas" :key="pregunta.id">
-                    <div
-                        class="border-2 p-5 rounded-xl bg-gradient-to-br from-gray-50 to-white transition-all duration-200"
-                        :class="{'ring-4 ring-indigo-400 shadow-lg': seleccionado.seccion === sIndex && seleccionado.pregunta === pIndex}"
-                        @click.stop="selectPregunta(sIndex, pIndex)"
+
+
+                    
+                    <template
+                        x-for="(pregunta, pIndex) in seccion.preguntas"
+                        :key="pregunta.id + '-' + pIndex"
                     >
 
-                       {{-- Mostrar tipo actual con botón para abrir modal --}}
-                        <div class="mb-4 flex items-center gap-3">
-                            <div class="flex-1 px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-lg">
-                                <span class="text-sm text-gray-600">Tipo: </span>
-                                <span class="font-semibold text-indigo-700" x-text="tipos.find(t => t.value === pregunta.tipo)?.label"></span>
-                            </div>
-                           
-                            <button 
-                                @click.stop="abrirModalCambiarTipo(sIndex, pIndex)"
-                                class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 
-                                    text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
-                                Cambiar tipo
-                            </button>
 
-                        </div>
-
-                    <!-- TÍTULO -->
-                    <template x-if="pregunta.tipo === 'titulo'">
-                        <input
-                            x-model="pregunta.texto"
-                            placeholder="Título"
-                            class="border-b-2 border-gray-300 focus:border-indigo-500 w-full font-bold mb-4 p-2 text-3xl outline-none transition-colors"
+                        <div
+                            class="pregunta-item border-2 p-5 rounded-xl bg-gradient-to-br from-gray-50 to-white transition-all duration-200"
+                            :class="{'ring-4 ring-indigo-400 shadow-lg': seleccionado.seccion === sIndex && seleccionado.pregunta === pIndex}"
+                            @click.stop="selectPregunta(sIndex, pIndex)"
                         >
-                    </template>
 
-                    <!-- TEXTO LIBRE -->
-                    <template x-if="pregunta.tipo === 'texto_libre'">
-                        <textarea
-                            x-model="pregunta.texto"
-                            placeholder="Texto descriptivo"
-                            rows="3"
-                            class="border-2 border-gray-300 focus:border-indigo-500 w-full mb-4 p-3 rounded-lg outline-none transition-colors"
-                        ></textarea>
-                    </template>
-
-                    <!-- PREGUNTA NORMAL -->
-                    <template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
-                        <input
-                            x-model="pregunta.texto"
-                            placeholder="Escribe tu pregunta aquí"
-                            class="border-b-2 border-gray-300 focus:border-indigo-500 w-full font-semibold mb-4 p-2 text-lg outline-none transition-colors"
-                        >
-                    </template>
-
-
-                     
-
-                        {{-- OPCIONES CON BOTÓN MEJORADO --}}
-                        <template x-if="isChoice(pregunta)">
-                            <div class="space-y-3 mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h4 class="text-sm font-bold text-blue-900">Opciones de respuesta</h4>
-                                    <button @click="addOption(sIndex, pIndex)"
-                                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
-                                        + Nueva opción
-                                    </button>
+                        {{-- Handle mejorado para drag & drop --}}
+                            <div class="flex justify-between items-center mb-4">
+                                <div
+                                    class="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-indigo-600 flex items-center gap-2 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
+                                    title="Arrastrar para reordenar"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8h16M4 16h16m-7 6h7"></path>
+                                    </svg>
+                                    <span class="text-xs font-semibold">Mover</span>
                                 </div>
-                                
-                                <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
-                                    <div class="flex gap-2 items-center">
-                                        <span class="text-gray-400 font-mono text-sm" x-text="oIndex + 1 + '.'"></span>
-                                        <input x-model="op.texto" 
-                                               class="border-2 border-gray-300 focus:border-blue-500 p-2 rounded-lg w-full outline-none transition-colors"
-                                               placeholder="Escribe una opción">
-                                        <button @click="removeOption(sIndex, pIndex, oIndex)"
-                                                class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                            </svg>
+                            </div>
+
+
+                        {{-- Mostrar tipo actual con botón para abrir modal --}}
+                            <div class="mb-4 flex items-center gap-3">
+                                <div class="flex-1 px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                    <span class="text-sm text-gray-600">Tipo: </span>
+                                    <span class="font-semibold text-indigo-700" x-text="tipos.find(t => t.value === pregunta.tipo)?.label"></span>
+                                </div>
+                            
+                                <button 
+                                    @click.stop="abrirModalCambiarTipo(sIndex, pIndex)"
+                                    class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 
+                                        text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
+                                    Cambiar tipo
+                                </button>
+
+                            </div>
+
+                        <!-- TÍTULO -->
+                        <template x-if="pregunta.tipo === 'titulo'">
+                            <input
+                                x-model="pregunta.texto"
+                                placeholder="Título"
+                                class="border-b-2 border-gray-300 focus:border-indigo-500 w-full font-bold mb-4 p-2 text-3xl outline-none transition-colors"
+                            >
+                        </template>
+
+                        <!-- TEXTO LIBRE -->
+                        <template x-if="pregunta.tipo === 'texto_libre'">
+                            <textarea
+                                x-model="pregunta.texto"
+                                placeholder="Texto descriptivo"
+                                rows="3"
+                                class="border-2 border-gray-300 focus:border-indigo-500 w-full mb-4 p-3 rounded-lg outline-none transition-colors"
+                            ></textarea>
+                        </template>
+
+                        <!-- PREGUNTA NORMAL -->
+                        <template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
+                            <input
+                                x-model="pregunta.texto"
+                                placeholder="Escribe tu pregunta aquí"
+                                class="border-b-2 border-gray-300 focus:border-indigo-500 w-full font-semibold mb-4 p-2 text-lg outline-none transition-colors"
+                            >
+                        </template>
+
+
+                        
+
+                            {{-- OPCIONES CON BOTÓN MEJORADO --}}
+                            <template x-if="isChoice(pregunta)">
+                                <div class="space-y-3 mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-sm font-bold text-blue-900">Opciones de respuesta</h4>
+                                        <button @click="addOption(sIndex, pIndex)"
+                                                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                            + Nueva opción
                                         </button>
                                     </div>
-                                </template>
-                            </div>
-                        </template>
-
-                        {{-- ESCALA LINEAL --}}
-                        <template x-if="pregunta.tipo === 'escala_lineal'">
-                            <div class="grid grid-cols-2 gap-4 mb-4 bg-purple-50 p-4 rounded-lg border border-purple-200">
-                                <div>
-                                    <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Desde</label>
-                                    <input type="number" x-model.number="pregunta.escala_min" 
-                                           class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Hasta</label>
-                                    <input type="number" x-model.number="pregunta.escala_max" 
-                                           class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Etiqueta inicial</label>
-                                    <input x-model="pregunta.etiqueta_min" 
-                                           class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Etiqueta final</label>
-                                    <input x-model="pregunta.etiqueta_max" 
-                                           class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
-                                </div>
-                            </div>
-                        </template>
-
-                        {{-- CUADRÍCULA --}}
-                        <template x-if="['cuadricula_opciones','cuadricula_casillas'].includes(pregunta.tipo)">
-                            <div class="grid grid-cols-2 gap-4 mb-4 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                                <div>
-                                    <h4 class="text-sm font-bold mb-3 text-indigo-900">Filas</h4>
-                                    <template x-for="(f, fIndex) in pregunta.filas" :key="f.id">
-                                        <div class="flex gap-2 mb-2">
-                                            <input x-model="f.texto" 
-                                                   class="border-2 border-gray-300 focus:border-indigo-500 p-2 w-full rounded-lg outline-none">
-                                            <button @click="removeFila(sIndex, pIndex, fIndex)" 
-                                                class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-
+                                    
+                                    <template x-for="(op, oIndex) in pregunta.opciones" :key="op.id">
+                                        <div class="flex gap-2 items-center">
+                                            <span class="text-gray-400 font-mono text-sm" x-text="oIndex + 1 + '.'"></span>
+                                            <input x-model="op.texto" 
+                                                class="border-2 border-gray-300 focus:border-blue-500 p-2 rounded-lg w-full outline-none transition-colors"
+                                                placeholder="Escribe una opción">
+                                            <button @click="removeOption(sIndex, pIndex, oIndex)"
+                                                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                 </svg>
                                             </button>
                                         </div>
                                     </template>
-                                    <button @click="addFila(sIndex, pIndex)"
-                                        class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold mt-2 hover:underline">
-
-                                        + Agregar fila
-                                    </button>
                                 </div>
+                            </template>
 
-                                <div>
-                                    <h4 class="text-sm font-bold mb-3 text-indigo-900">Columnas</h4>
-                                    <template x-for="(c, cIndex) in pregunta.columnas" :key="c.id">
-                                        <div class="flex gap-2 mb-2">
-                                            <input x-model="c.texto" 
-                                                   class="border-2 border-gray-300 focus:border-indigo-500 p-2 w-full rounded-lg outline-none">
-                                           <button @click="removeColumna(sIndex, pIndex, cIndex)" 
-                                                class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                            {{-- ESCALA LINEAL --}}
+                            <template x-if="pregunta.tipo === 'escala_lineal'">
+                                <div class="grid grid-cols-2 gap-4 mb-4 bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Desde</label>
+                                        <input type="number" x-model.number="pregunta.escala_min" 
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Hasta</label>
+                                        <input type="number" x-model.number="pregunta.escala_max" 
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Etiqueta inicial</label>
+                                        <input x-model="pregunta.etiqueta_min" 
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Etiqueta final</label>
+                                        <input x-model="pregunta.etiqueta_max" 
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                </div>
+                            </template>
 
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </template>
-                                    <button @click="addColumna(sIndex, pIndex)"
+                            {{-- CUADRÍCULA --}}
+                            <template x-if="['cuadricula_opciones','cuadricula_casillas'].includes(pregunta.tipo)">
+                                <div class="grid grid-cols-2 gap-4 mb-4 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                                    <div>
+                                        <h4 class="text-sm font-bold mb-3 text-indigo-900">Filas</h4>
+                                        <template x-for="(f, fIndex) in pregunta.filas" :key="f.id">
+                                            <div class="flex gap-2 mb-2">
+                                                <input x-model="f.texto" 
+                                                    class="border-2 border-gray-300 focus:border-indigo-500 p-2 w-full rounded-lg outline-none">
+                                                <button @click="removeFila(sIndex, pIndex, fIndex)" 
+                                                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <button @click="addFila(sIndex, pIndex)"
                                             class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold mt-2 hover:underline">
 
-                                        + Agregar columna
+                                            + Agregar fila
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <h4 class="text-sm font-bold mb-3 text-indigo-900">Columnas</h4>
+                                        <template x-for="(c, cIndex) in pregunta.columnas" :key="c.id">
+                                            <div class="flex gap-2 mb-2">
+                                                <input x-model="c.texto" 
+                                                    class="border-2 border-gray-300 focus:border-indigo-500 p-2 w-full rounded-lg outline-none">
+                                            <button @click="removeColumna(sIndex, pIndex, cIndex)" 
+                                                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <button @click="addColumna(sIndex, pIndex)"
+                                                class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold mt-2 hover:underline">
+
+                                            + Agregar columna
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+
+
+
+                            {{-- PREVIEW --}}
+                            <template x-if="!['titulo', 'texto_libre'].includes(pregunta.tipo)">
+                                <div class="mt-4 pt-4 border-t-2 border-gray-200">
+                                    <div class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
+                                                    -1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        Vista previa
+                                    </div>
+
+                                    <div class="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-inner"
+                                        x-html="renderPregunta(pregunta)">
+                                    </div>
+                                </div>
+                            </template>
+
+                                                    <!-- OBLIGATORIA -->
+                            <template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
+                                <div class="flex justify-end items-center gap-3 mt-4">
+                                    <span class="text-sm font-medium text-gray-600">
+                                        Obligatoria
+                                    </span>
+
+                                    <!-- Toggle -->
+                                    <button
+                                        @click="pregunta.obligatoria = !pregunta.obligatoria"
+                                        :class="pregunta.obligatoria ? 'bg-indigo-600' : 'bg-gray-300'"
+                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
+                                    >
+                                        <span
+                                            :class="pregunta.obligatoria ? 'translate-x-6' : 'translate-x-1'"
+                                            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"
+                                        ></span>
                                     </button>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
 
-
-
-
-                        {{-- PREVIEW --}}
-                        <template x-if="!['titulo', 'texto_libre'].includes(pregunta.tipo)">
-                            <div class="mt-4 pt-4 border-t-2 border-gray-200">
-                                <div class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
-                                                -1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
-                                    Vista previa
-                                </div>
-
-                                <div class="p-4 bg-white border-2 border-gray-200 rounded-lg shadow-inner"
-                                    x-html="renderPregunta(pregunta)">
-                                </div>
-                            </div>
-                        </template>
-
-                                                 <!-- OBLIGATORIA -->
-<template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
-    <div class="flex justify-end items-center gap-3 mt-4">
-        <span class="text-sm font-medium text-gray-600">
-            Obligatoria
-        </span>
-
-        <!-- Toggle -->
-        <button
-            @click="pregunta.obligatoria = !pregunta.obligatoria"
-            :class="pregunta.obligatoria ? 'bg-indigo-600' : 'bg-gray-300'"
-            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
-        >
-            <span
-                :class="pregunta.obligatoria ? 'translate-x-6' : 'translate-x-1'"
-                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"
-            ></span>
-        </button>
-    </div>
-</template>
-
+                        </div>
+                    </template>
+                </div>
 
 
             </div>
@@ -458,7 +509,7 @@
                     <div class="flex items-start gap-4">
                         <div class="p-3 bg-blue-500 rounded-lg text-white group-hover:scale-110 transition-transform">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                             </svg>
                         </div>
                         <div>
@@ -607,6 +658,26 @@
     </div>
 
 </div>
+
+{{-- CSS agregado para Sortable.js --}}
+<style>
+.sortable-ghost {
+    opacity: 0.4;
+    background: #e0e7ff;
+}
+
+.sortable-drag {
+    opacity: 1;
+}
+
+.sortable-chosen {
+    cursor: grabbing !important;
+}
+
+.drag-handle:active {
+    cursor: grabbing !important;
+}
+</style>
 
 <script>
 document.addEventListener("alpine:init", () => {

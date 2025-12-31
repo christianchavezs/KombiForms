@@ -316,6 +316,7 @@ export function formBuilder(initialSections = [], formId = null) {
                     });
 
                     html += `
+                    
                             </tbody>
                         </table>
                     `;
