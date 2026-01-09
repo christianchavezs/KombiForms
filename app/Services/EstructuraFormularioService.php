@@ -14,10 +14,10 @@ class EstructuraFormularioService
     {
         DB::transaction(function () use ($formulario, $estructura) {
 
-            // 1️⃣ Obtener las secciones enviadas desde el frontend
+            // 1  Obtener las secciones enviadas desde el frontend
             $secciones = $estructura; 
 
-            // 2️⃣ Eliminar estructura anterior
+            // 2 Eliminar estructura anterior
             $formulario->secciones()->each(function ($seccion) {
                 $seccion->preguntas()->each(function ($pregunta) {
                     $pregunta->opciones()->delete();
@@ -26,7 +26,7 @@ class EstructuraFormularioService
             });
             $formulario->secciones()->delete();
 
-            // 3️⃣ Guardar nueva estructura
+            // 3 Guardar nueva estructura
             foreach ($secciones as $ordenSeccion => $dataSeccion) {
 
                 $seccion = Seccion::create([

@@ -34,7 +34,7 @@ function createQuestion(text = "Nuevo elemento", tipo = 'texto_corto') {
     return {
         id: uid("q-"),
         tipo,
-        texto: text,
+        texto: text ?? " ",
         obligatoria: false,
 
         escala_min: 1,
@@ -117,11 +117,6 @@ export function formBuilder(initialSections = [], formId = null) {
         ];
     }
 
-
-    /*const sections = Array.isArray(initialSections) && initialSections.length
-        ? deepClone(initialSections)
-        : [createSection("Sección 1")];*/
-
     const secciones = Array.isArray(initialSections) && initialSections.length
         ? initialSections.map(normalizarSeccion)
         : [createSeccion("Sección 1")];
@@ -131,10 +126,10 @@ export function formBuilder(initialSections = [], formId = null) {
         formId: formId ?? null,
         secciones: secciones, // <- nombre correcto
 
-        // 🔥 VARIABLES QUE FALTAN Y GENERAN ERRORES
-    menuColapsado: false,
-    mostrarModalTipos: false,
-    confirmarEliminarSeccion: null,
+        // Variables que controlan el menú lateral
+        menuColapsado: false,
+        mostrarModalTipos: false,
+        confirmarEliminarSeccion: null,
 
         seleccionado: { seccion: null, pregunta: null },
 
@@ -618,6 +613,7 @@ export function formBuilder(initialSections = [], formId = null) {
             // Títulos y textos nunca pueden ser obligatorios
             if (['titulo', 'texto'].includes(tipo)) {
                 q.obligatoria = false;
+                q.texto = q.texto ?? " "; //Evita que textos sean null en la BD
             }
 
         },
@@ -705,7 +701,7 @@ export function formBuilder(initialSections = [], formId = null) {
             }
         },
 
-
+/*
         getEstructura() {
             return this.secciones.map((sec, si) => ({
                 titulo: sec.titulo,
@@ -732,8 +728,39 @@ export function formBuilder(initialSections = [], formId = null) {
                         : []
                 }))
             }));
-        }
+        }*/
 
+
+
+            getEstructura() 
+            {
+                return this.secciones.map((sec, si) => ({
+                    titulo: sec.titulo ?? "",
+                    descripcion: sec.descripcion ?? "",
+                    orden: si + 1,
+
+                    preguntas: sec.preguntas.map((p, pi) => ({
+                        tipo: p.tipo,
+                        texto: (p.texto && p.texto.trim() !== "") ? p.texto : " ",
+ 
+                        obligatorio: ['titulo', 'texto'].includes(p.tipo) ? 0 : (p.obligatoria ? 1 : 0),
+                        orden: pi + 1,
+
+                        escala_min: p.tipo === 'escala_lineal' ? (p.escala_min ?? 1) : null,
+                        escala_max: p.tipo === 'escala_lineal' ? (p.escala_max ?? 5) : null,
+
+                        filas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? (p.filas ?? []) : [],
+                        columnas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? (p.columnas ?? []) : [],
+
+                        opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
+                            ? (p.opciones ?? []).map((o, oi) => ({
+                                texto: o.texto ?? "",
+                                orden: oi + 1
+                            }))
+                            : []
+                    }))
+                }));
+            }
 
         
 
