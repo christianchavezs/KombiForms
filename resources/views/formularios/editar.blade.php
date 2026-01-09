@@ -1,61 +1,24 @@
 @extends('layouts.app')
 
+
+
+
 @section('content')
-<div
-    x-data="{
-        ...formBuilder(@json($formulario->secciones ?? []), {{ $formulario->id }}),
-        confirmarEliminarSeccion: null,
-        menuColapsado: false,
-        mostrarModalTipos: false,
-        seccionActualModal: null,
-        preguntaActualModal: null,
 
-        
-        addPreguntaConTipo(tipo) {
-            if (this.seccionActualModal === null) return;
+<script>
+    console.log("Formulario completo:", @json($formulario));
+    console.log("Secciones recibidas:", @json($formulario->secciones ?? []));
+</script>
+<script>
+    window.dataSecciones = @json($formulario->secciones);
+    window.dataFormularioId = {{ $formulario->id }};
+</script>
 
-            if (this.preguntaActualModal !== null) {
-                // 🔁 Cambiar tipo de pregunta existente
-                this.changeTipo(
-                    this.seccionActualModal,
-                    this.preguntaActualModal,
-                    tipo
-                );
-            } else {
-                // ➕ Crear nueva pregunta
-                this.addPregunta(this.seccionActualModal);
-                const i = this.secciones[this.seccionActualModal].preguntas.length - 1;
-                this.changeTipo(this.seccionActualModal, i, tipo);
-            }
+    <div
+        x-data="formBuilder(window.dataSecciones, window.dataFormularioId)"
+        class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
+    >
 
-            this.mostrarModalTipos = false;
-            this.preguntaActualModal = null;
-        },
-
-
-        abrirModalTipos() {
-            if (this.seleccionado.seccion === null) {
-                alert('Por favor selecciona una sección primero');
-                return;
-            }
-
-            this.seccionActualModal = this.seleccionado.seccion;
-            this.preguntaActualModal = null; // 👈 nueva pregunta
-            this.mostrarModalTipos = true;
-        },
-
-        abrirModalCambiarTipo(sIndex, pIndex) {
-            this.seccionActualModal = sIndex;
-            this.preguntaActualModal = pIndex;
-            this.selectPregunta(sIndex, pIndex);
-            this.mostrarModalTipos = true;
-        },
-
-
-       
-    }"
-    class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
->
 
     {{-- ================= PANEL LATERAL MEJORADO ================= --}}
     <aside
@@ -215,11 +178,7 @@
         }
     "
 >
-
-
-
-
-                    
+     
                     <template
                         x-for="(pregunta, pIndex) in seccion.preguntas"
                         :key="pregunta.id + '-' + pIndex"
@@ -258,8 +217,10 @@
                                     @click.stop="abrirModalCambiarTipo(sIndex, pIndex)"
                                     class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 
                                         text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
-                                    Cambiar tipo
+                                    Cambiar Tipo
                                 </button>
+                                
+
 
                             </div>
 
@@ -273,7 +234,7 @@
                         </template>
 
                         <!-- TEXTO LIBRE -->
-                        <template x-if="pregunta.tipo === 'texto_libre'">
+                        <template x-if="pregunta.tipo === 'texto'">
                             <textarea
                                 x-model="pregunta.texto"
                                 placeholder="Texto descriptivo"
@@ -283,7 +244,9 @@
                         </template>
 
                         <!-- PREGUNTA NORMAL -->
-                        <template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
+                        
+                        <template x-if="!['titulo','texto'].includes(pregunta.tipo)">
+
                             <input
                                 x-model="pregunta.texto"
                                 placeholder="Escribe tu pregunta aquí"
@@ -401,7 +364,7 @@
 
 
                             {{-- PREVIEW --}}
-                            <template x-if="!['titulo', 'texto_libre'].includes(pregunta.tipo)">
+                            <template x-if="!['titulo', 'texto'].includes(pregunta.tipo)">
                                 <div class="mt-4 pt-4 border-t-2 border-gray-200">
                                     <div class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -421,7 +384,7 @@
                             </template>
 
                                                     <!-- OBLIGATORIA -->
-                            <template x-if="!['titulo','texto_libre'].includes(pregunta.tipo)">
+                            <template x-if="!['titulo','texto'].includes(pregunta.tipo)">
                                 <div class="flex justify-end items-center gap-3 mt-4">
                                     <span class="text-sm font-medium text-gray-600">
                                         Obligatoria
@@ -480,7 +443,7 @@
 
                 <!-- TÍTULO -->
                 <button
-                    @click="addPreguntaConTipo('titulo')"
+                    @click="modalCambio.pregunta !== null ? confirmarCambioTipo('titulo'): addPreguntaConTipo('titulo')"
                     class="flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-50 w-full text-left"
                 >
                     <span class="text-2xl">🟣</span>
@@ -492,7 +455,9 @@
 
                 <!-- TEXTO -->
                 <button
-                    @click="addPreguntaConTipo('texto_libre')"
+                    @click="modalCambio.pregunta !== null ? confirmarCambioTipo('texto'): addPreguntaConTipo('texto')"
+
+                    
                     class="flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-50 w-full text-left"
                 >
                     <span class="text-2xl">📄</span>
@@ -503,7 +468,9 @@
                 </button>
 
                 {{-- Texto Corto --}}
-                <button @click="addPreguntaConTipo('texto_corto')" 
+                <button 
+                        @click="modalCambio.pregunta !== null ? confirmarCambioTipo('texto_corto'): addPreguntaConTipo('texto_corto')"
+ 
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg 
                                transition-all duration-200 text-left group bg-gradient-to-br from-white to-blue-50">
                     <div class="flex items-start gap-4">
@@ -520,7 +487,8 @@
                 </button>
 
                 {{-- Párrafo --}}
-                <button @click="addPreguntaConTipo('parrafo')" 
+                <button  @click="modalCambio.pregunta !== null ? confirmarCambioTipo('parrafo'): addPreguntaConTipo('parrafo')"
+ 
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg 
                                transition-all duration-200 text-left group bg-gradient-to-br from-white to-green-50">
                     <div class="flex items-start gap-4">
@@ -537,7 +505,7 @@
                 </button>
 
                 {{-- Opción Múltiple --}}
-                <button @click="addPreguntaConTipo('opcion_multiple')" 
+                <button  @click="modalCambio.pregunta !== null ? confirmarCambioTipo('opcion_multiple'): addPreguntaConTipo('opcion_multiple')"
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:shadow-lg 
                                transition-all duration-200 text-left group bg-gradient-to-br from-white to-purple-50">
                     <div class="flex items-start gap-4">
@@ -554,7 +522,7 @@
                 </button>
 
                 {{-- Casillas --}}
-                <button @click="addPreguntaConTipo('casillas')" 
+                <button  @click="modalCambio.pregunta !== null ? confirmarCambioTipo('casillas'): addPreguntaConTipo('casillas')"
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-indigo-500 hover:shadow-lg 
                                transition-all duration-200 text-left group bg-gradient-to-br from-white to-indigo-50">
                     <div class="flex items-start gap-4">
@@ -571,7 +539,7 @@
                 </button>
 
                 {{-- Escala Lineal --}}
-                <button @click="addPreguntaConTipo('escala_lineal')" 
+                <button  @click="modalCambio.pregunta !== null ? confirmarCambioTipo('escala_lineal'): addPreguntaConTipo('escala_lineal')"
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-pink-500 hover:shadow-lg 
                                transition-all duration-200 text-left group bg-gradient-to-br from-white to-pink-50">
                     <div class="flex items-start gap-4">
@@ -588,7 +556,7 @@
                 </button>
 
                 {{-- Cuadrícula Opciones --}}
-                <button @click="addPreguntaConTipo('cuadricula_opciones')" 
+                <button  @click="modalCambio.pregunta !== null ? confirmarCambioTipo('cuadricula_opciones'): addPreguntaConTipo('cuadricula_opciones')"
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-orange-500 hover:shadow-lg 
                                transition-all duration-200 text-left group bg-gradient-to-br from-white to-orange-50">
                     <div class="flex items-start gap-4">
@@ -605,7 +573,7 @@
                 </button>
 
                 {{-- Cuadrícula Casillas --}}
-                <button @click="addPreguntaConTipo('cuadricula_casillas')" 
+                <button  @click="modalCambio.pregunta !== null ? confirmarCambioTipo('cuadricula_casillas'): addPreguntaConTipo('cuadricula_casillas')"
                         class="p-5 border-2 border-gray-200 rounded-xl hover:border-teal-500 hover:shadow-lg 
                                transition-all duration-200 text-left group bg-gradient-to-br from-white to-teal-50">
                     <div class="flex items-start gap-4">
@@ -686,4 +654,12 @@ document.addEventListener("alpine:init", () => {
     }
 });
 </script>
+
+<script>
+document.addEventListener("alpine:init", () => {
+    Alpine.data("formBuilder", window.formBuilder);
+});
+</script>
+
 @endsection
+

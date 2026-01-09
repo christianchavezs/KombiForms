@@ -11,6 +11,9 @@ class Seccion extends Model
 
     protected $table = 'secciones';
 
+    const CREATED_AT = 'creado_en';
+    const UPDATED_AT = 'actualizado_en';
+
     protected $fillable = [
         'formulario_id',
         'titulo',

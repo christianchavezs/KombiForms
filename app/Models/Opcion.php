@@ -11,6 +11,9 @@ class Opcion extends Model
 
     protected $table = 'opciones';
 
+    const CREATED_AT = 'creado_en';
+    const UPDATED_AT = 'actualizado_en';
+
     protected $fillable = [
         'pregunta_id',
         'texto',

@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormularioController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EstructuraFormularioController;
 
 // ===============================
 // REDIRECCIÓN A DASHBOARD
@@ -44,15 +45,13 @@ Route::middleware('auth')->group(function () {
         ->name('formularios.editar');
 
         // ACTUALIZAR FORMULARIO
-Route::put('/formularios/{id}', [FormularioController::class, 'actualizar'])
+    Route::put('/formularios/{id}', [FormularioController::class, 'actualizar'])
     ->name('formularios.actualizar');
 
 
 
     
-    // Guardar estructura completa (secciones/preguntas/opciones)
-    Route::post('/formularios/{id}/estructura', [FormularioController::class, 'guardarEstructura'])
-        ->name('formularios.guardarEstructura');
+  
 
         // Secciones y preguntas AJAX
     Route::post('/formularios/{formulario}/secciones', [FormularioController::class, 'storeSeccion'])->name('formularios.secciones.store');
@@ -66,6 +65,11 @@ Route::put('/formularios/{id}', [FormularioController::class, 'actualizar'])
     // Opciones (crear/borrar rápidas)
     Route::post('/preguntas/{pregunta}/opciones', [FormularioController::class, 'storeOpcion'])->name('formularios.opciones.store');
     Route::delete('/opciones/{opcion}', [FormularioController::class, 'destroyOpcion'])->name('formularios.opciones.destroy');
+
+   //Guardar Formulario Estructura Formulario Controler
+    
+
+    Route::post('/formularios/{formulario}/estructura', [EstructuraFormularioController::class, 'guardar'] )->name('formularios.estructura.guardar');
 
 
 

@@ -4,6 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Formulario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Models\Seccion;
+use App\Models\Pregunta;
+use App\Models\Opcion;
+
+use App\Services\EstructuraFormularioService;
+
+
 
 class FormularioController extends Controller
 {
@@ -36,7 +44,6 @@ class FormularioController extends Controller
 
 
 
-
     // ===============================================
     // CREAR FORMULARIO
     // ===============================================
@@ -44,8 +51,6 @@ class FormularioController extends Controller
     {
         return view('formularios.crear');
     }
-
-
 
 
     // ===============================================
@@ -77,9 +82,6 @@ class FormularioController extends Controller
             ->with('success', 'Formulario creado correctamente.');
     }
 
-
-
-
     // ===============================================
     // EDITAR FORMULARIO (Constructor)
     // ===============================================
@@ -90,8 +92,6 @@ class FormularioController extends Controller
 
         return view('formularios.editar', compact('formulario'));
     }
-
-
 
 
     // ===============================================
@@ -115,9 +115,6 @@ class FormularioController extends Controller
             ->with('success', 'Cambios guardados correctamente.');
     }
 
-
-
-
     // ===============================================
     // ELIMINAR FORMULARIO
     // ===============================================
@@ -129,66 +126,6 @@ class FormularioController extends Controller
         return redirect()->route('formularios.index')
             ->with('success', 'Formulario eliminado.');
     }
-
-    /**
- * Guardar la estructura completa del formulario (secciones -> preguntas -> opciones)
- * El front envía un JSON con 'secciones' => [ { titulo, descripcion, orden, preguntas: [...] } ]
- */
-public function guardarEstructura(Request $request, $id)
-{
-    $request->validate([
-        'estructura' => 'required|array',
-    ]);
-
-    $estructura = $request->input('estructura');
-
-    $formulario = Formulario::findOrFail($id);
-
-    DB::transaction(function () use ($formulario, $estructura) {
-        // Opción sencilla: eliminar las secciones actuales y recrear todo (limpio)
-        // Si deseas mergear/upsert, podemos mejorar después.
-        Seccion::where('formulario_id', $formulario->id)->delete();
-
-        foreach ($estructura as $sIndex => $s) {
-            $seccion = Seccion::create([
-                'formulario_id' => $formulario->id,
-                'titulo' => $s['titulo'] ?? null,
-                'descripcion' => $s['descripcion'] ?? null,
-                'orden' => $sIndex + 1,
-            ]);
-
-            // preguntas
-            if (!empty($s['preguntas']) && is_array($s['preguntas'])) {
-                foreach ($s['preguntas'] as $pIndex => $p) {
-                    $pregunta = Pregunta::create([
-                        'seccion_id' => $seccion->id,
-                        'tipo' => $p['tipo'] ?? 'texto_corto',
-                        'texto' => $p['texto'] ?? '',
-                        'obligatorio' => !empty($p['obligatorio']) ? 1 : 0,
-                        'orden' => $pIndex + 1,
-                        'escala_min' => $p['escala_min'] ?? null,
-                        'escala_max' => $p['escala_max'] ?? null,
-                    ]);
-
-                    // opciones (para tipos que requieren)
-                    if (!empty($p['opciones']) && is_array($p['opciones'])) {
-                        foreach ($p['opciones'] as $oIndex => $o) {
-                            Opcion::create([
-                                'pregunta_id' => $pregunta->id,
-                                'texto' => $o['texto'] ?? '',
-                                'fila' => $o['fila'] ?? null,
-                                'columna' => $o['columna'] ?? null,
-                                'orden' => $oIndex + 1,
-                            ]);
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    return response()->json(['ok' => true, 'message' => 'Estructura guardada']);
-}
 
     
 

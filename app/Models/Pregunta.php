@@ -9,6 +9,9 @@ class Pregunta extends Model
 
     protected $table = 'preguntas';
 
+    const CREATED_AT = 'creado_en';
+    const UPDATED_AT = 'actualizado_en';
+
     protected $fillable = [
         'seccion_id','tipo','texto','obligatoria','orden','escala_min','escala_max'
     ];

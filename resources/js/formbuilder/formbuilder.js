@@ -23,28 +23,12 @@ const QUESTION_TYPES = [
     { value: 'escala_lineal',     label: 'Escala lineal' },
     { value: 'cuadricula_opciones', label: 'Cuadrícula de opciones' },
     { value: 'cuadricula_casillas', label: 'Cuadrícula casillas' },
+
+    { value: 'fecha',               label: 'Fecha' },
+    { value: 'hora',                label: 'Hora' },
+    { value: 'fecha_hora',          label: 'Fecha y hora' },
 ];
 
-// ---------------------- CREAR PREGUNTA ----------------
-/*function createQuestion(text = "Nueva pregunta") {
-    return {
-        id: uid("q-"),
-        tipo: 'texto_corto',
-        texto: text,
-        obligatoria: false,
-
-        // escala
-        escala_min: 1,
-        escala_max: 5,
-
-        // opciones
-        opciones: [],
-
-        // cuadrícula
-        filas: [],
-        columnas: [],
-    };
-}*/
 
 function createQuestion(text = "Nuevo elemento", tipo = 'texto_corto') {
     return {
@@ -78,20 +62,154 @@ function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+function normalizarSeccion(sec) {
+    return {
+        id: sec.id ?? uid("s-"),
+        titulo: sec.titulo ?? "Sección",
+        descripcion: sec.descripcion ?? "",
+        orden: sec.orden ?? 1,
+
+        preguntas: (sec.preguntas || []).map(p => ({
+            id: p.id ?? uid("p-"),
+            tipo: p.tipo ?? "texto_corto",
+            texto: p.texto ?? "",
+            obligatoria: !!p.obligatoria,
+
+            orden: p.orden ?? 1,
+            escala_min: p.escala_min ?? 1,
+            escala_max: p.escala_max ?? 5,
+
+            filas: (p.filas || []).map(f => ({
+                id: f.id ?? uid("f-"),
+                texto: f.texto ?? ""
+            })),
+
+            columnas: (p.columnas || []).map(c => ({
+                id: c.id ?? uid("c-"),
+                texto: c.texto ?? ""
+            })),
+
+            opciones: (p.opciones || []).map(o => ({
+                id: o.id ?? uid("o-"),
+                texto: o.texto ?? "",
+                fila: o.fila ?? null,
+                columna: o.columna ?? null
+            }))
+        }))
+    };
+}
+
+
 // ======================================================
 // EXPORT PRINCIPAL PARA ALPINE
 // ======================================================
 
 export function formBuilder(initialSections = [], formId = null) {
 
-    const sections = Array.isArray(initialSections) && initialSections.length
+    if (!Array.isArray(initialSections) || initialSections.length === 0) {
+        initialSections = [
+            {
+                id: null,
+                nombre: "Nueva sección",
+                orden: 1,
+                preguntas: []
+            }
+        ];
+    }
+
+
+    /*const sections = Array.isArray(initialSections) && initialSections.length
         ? deepClone(initialSections)
-        : [createSection("Sección 1")];
+        : [createSection("Sección 1")];*/
+
+    const secciones = Array.isArray(initialSections) && initialSections.length
+        ? initialSections.map(normalizarSeccion)
+        : [createSeccion("Sección 1")];
+
 
     return {
         formId: formId ?? null,
-        secciones: sections,
+        secciones: secciones, // <- nombre correcto
+
+        // 🔥 VARIABLES QUE FALTAN Y GENERAN ERRORES
+    menuColapsado: false,
+    mostrarModalTipos: false,
+    confirmarEliminarSeccion: null,
+
         seleccionado: { seccion: null, pregunta: null },
+
+
+        mostrarModalTipos: false,
+        confirmarEliminarSeccion: null,
+
+        modalCambio: { seccion: null, pregunta: null },
+
+        abrirModalCambiarTipo(sIndex, pIndex) {
+            this.modalCambio.seccion = sIndex;
+            this.modalCambio.pregunta = pIndex;
+            this.mostrarModalTipos = true; // reutilizamos el mismo modal
+        },
+
+        confirmarCambioTipo(tipo) {
+            if (this.modalCambio.seccion === null || this.modalCambio.pregunta === null) return;
+
+            this.changeTipo(
+                this.modalCambio.seccion,
+                this.modalCambio.pregunta,
+                tipo
+            );
+
+            // reiniciar estado del modal
+            this.modalCambio = { seccion: null, pregunta: null };
+            this.mostrarModalTipos = false;
+        },
+
+
+        abrirModalTipos() {
+            if (this.seleccionado.seccion === null) {
+                alert("Primero selecciona una sección.");
+                return;
+            }
+            this.mostrarModalTipos = true;
+        },
+
+        cerrarModalTipos() {
+            this.mostrarModalTipos = false;
+        },
+
+        addPreguntaConTipo(tipo) {
+            const secIndex = this.seleccionado.seccion;
+            if (secIndex === null) return;
+
+            const sec = this.secciones[secIndex];
+
+            // Crear pregunta
+            const q = {
+                id: uid('q-'),
+                texto: '',
+                tipo: tipo,
+                obligatoria: false,
+                opciones: [],
+                filas: [],
+                columnas: [],
+                escala_min: 1,
+                escala_max: 5
+            };
+
+            // Asegurar estructura según el tipo
+            this._ensureStructureForTipo(q, tipo);
+
+            // Agregar a la sección
+            sec.preguntas.push(q);
+
+            // Seleccionar la pregunta recién creada
+            this.seleccionado.pregunta = sec.preguntas.length - 1;
+
+            // Cerrar modal
+            this.mostrarModalTipos = false;
+        },
+
+
 
         get tipos() {
             return QUESTION_TYPES;
@@ -145,8 +263,6 @@ export function formBuilder(initialSections = [], formId = null) {
                     return "🅣 Título";
                 case "texto":
                     return "🅣 Texto descriptivo";
-
-
 
                 case "texto_corto":
                     return "📝 Respuesta corta";
@@ -416,7 +532,14 @@ export function formBuilder(initialSections = [], formId = null) {
         addOption(secIndex, pregIndex) {
             const q = this.secciones[secIndex].preguntas[pregIndex];
             if (!q.opciones) q.opciones = [];
-            q.opciones.push({ id: uid("o-"), texto: `Opción ${q.opciones.length + 1}` });
+            //q.opciones.push({ id: uid("o-"), texto: `Opción ${q.opciones.length + 1}` });
+            q.opciones.push({
+                id: uid("o-"),
+                texto: `Opción ${q.opciones.length + 1}`,
+                fila: null,
+                columna: null,
+            });
+
         },
 
         
@@ -453,10 +576,18 @@ export function formBuilder(initialSections = [], formId = null) {
             // Acomodar valores según tipo
             if (['opcion_multiple', 'casillas', 'desplegable'].includes(tipo)) {
                 if (!q.opciones.length) {
-                    q.opciones = [
+                    /*q.opciones = [
                         { id: uid("o-"), texto: 'Opción 1' },
                         { id: uid("o-"), texto: 'Opción 2' }
+                    ];*/
+
+                    q.opciones = [
+                        { id: uid("o-"), texto: 'Opción 1', fila: null, columna: null },
+                        { id: uid("o-"), texto: 'Opción 2', fila: null, columna: null }
                     ];
+
+
+
                 }
             } else {
                 // si no es tipo de opciones, mantenemos array vacío
@@ -543,19 +674,43 @@ export function formBuilder(initialSections = [], formId = null) {
         },
 
 
-
-        // ==================================================
-        // GUARDAR
-        // ==================================================
         async guardar() {
-            if (!this.formId) return alert("No hay formId definido.");
+            if (!this.formId) {
+                alert("No hay formId definido.");
+                return;
+            }
 
-            const estructura = this.secciones.map((sec, si) => ({
+            // Obtener la estructura mediante la función centralizada
+            const estructura = this.getEstructura();
+
+            try {
+                const resp = await fetch(`/formularios/${this.formId}/estructura`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ estructura })
+                });
+
+                if (!resp.ok) {
+                    const errorTxt = await resp.text();
+                    throw new Error(errorTxt);
+                }
+
+                alert("Guardado correctamente.");
+            } catch (err) {
+                alert("Error al guardar: " + err.message);
+            }
+        },
+
+
+        getEstructura() {
+            return this.secciones.map((sec, si) => ({
                 titulo: sec.titulo,
                 descripcion: sec.descripcion,
                 orden: si + 1,
-
-
 
                 preguntas: sec.preguntas.map((p, pi) => ({
                     tipo: p.tipo,
@@ -576,26 +731,14 @@ export function formBuilder(initialSections = [], formId = null) {
                         }))
                         : []
                 }))
-
-
-
             }));
-
-            try {
-                const resp = await fetch(`/formularios/${this.formId}/estructura`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ estructura })
-                });
-
-                if (!resp.ok) throw new Error(await resp.text());
-                alert("Guardado correctamente.");
-            } catch (err) {
-                alert("Error al guardar: " + err.message);
-            }
         }
+
+
+        
+
+
     };
 }
+
+window.formBuilder = formBuilder;
