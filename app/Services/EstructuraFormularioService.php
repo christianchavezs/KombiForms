@@ -59,7 +59,7 @@ class EstructuraFormularioService
                         Opcion::create([
                             'pregunta_id' => $pregunta->id,
                             'texto'       => $opcionData['texto'] ?? null,
-                            'orden'       => $opcionData['orden'] ?? null,
+                            //'orden'       => $opcionData['orden'] ?? null,
                             'fila'        => $fila,
                             'columna'     => $columna,
                         ]);

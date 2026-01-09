@@ -732,7 +732,7 @@ export function formBuilder(initialSections = [], formId = null) {
 
 
 
-            getEstructura() 
+            /*getEstructura() 
             {
                 return this.secciones.map((sec, si) => ({
                     titulo: sec.titulo ?? "",
@@ -760,7 +760,71 @@ export function formBuilder(initialSections = [], formId = null) {
                             : []
                     }))
                 }));
-            }
+            }*/
+
+
+                getEstructura() {
+                    return this.secciones.map((sec, si) => ({
+                        titulo: sec.titulo?.trim() || " ",
+                        descripcion: sec.descripcion?.trim() || " ",
+                        orden: si + 1,
+
+                        preguntas: sec.preguntas.map((p, pi) => ({
+                            tipo: p.tipo,
+                            texto: p.texto?.trim() || " ",
+                            obligatorio: ['titulo', 'texto'].includes(p.tipo) ? 0 : (p.obligatoria ? 1 : 0),
+                            orden: pi + 1,
+
+                            escala_min: p.tipo === 'escala_lineal' ? (p.escala_min ?? 1) : null,
+                            escala_max: p.tipo === 'escala_lineal' ? (p.escala_max ?? 5) : null,
+
+                            // SOLO para CUADRÍCULAS
+                            filas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo)
+                                ? (p.filas ?? []).map((f, fi) => ({
+                                    texto: f.texto?.trim() || `Fila ${fi + 1}`,
+                                    fila: fi + 1
+                                }))
+                                : [],
+
+                            columnas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo)
+                                ? (p.columnas ?? []).map((c, ci) => ({
+                                    texto: c.texto?.trim() || `Columna ${ci + 1}`,
+                                    columna: ci + 1
+                                }))
+                                : [],
+
+                            // SOLO para OPCIONES (NO CUADRÍCULAS)
+                            opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
+                                ? (p.opciones ?? []).map(o => ({
+                                    texto: o.texto?.trim() || "Opción",
+                                    fila: null,
+                                    columna: null
+                                }))
+                                : []
+                        }))
+                    }));
+                },
+
+
+
+
+
+                generarOpcionesCuadricula(p) {
+                    const opciones = [];
+
+                    (p.filas ?? []).forEach((f, fi) => {
+                        (p.columnas ?? []).forEach((c, ci) => {
+                            opciones.push({
+                                texto: `${f.texto} - ${c.texto}`,
+                                orden: opciones.length + 1,
+                                fila: fi + 1,
+                                columna: ci + 1
+                            });
+                        });
+                    });
+
+                    return opciones;
+                },
 
         
 
