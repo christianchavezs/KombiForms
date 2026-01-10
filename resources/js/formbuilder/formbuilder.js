@@ -536,7 +536,6 @@ export function formBuilder(initialSections = [], formId = null) {
             });
 
         },
-
         
         removeOption(secIndex, pregIndex, optIndex) {
             const q = this.secciones[secIndex].preguntas[pregIndex];
@@ -550,7 +549,6 @@ export function formBuilder(initialSections = [], formId = null) {
 
             q.opciones.splice(optIndex, 1);
         },
-
 
         // ==================================================
         // CAMBIO DE TIPO
@@ -613,7 +611,11 @@ export function formBuilder(initialSections = [], formId = null) {
             // Títulos y textos nunca pueden ser obligatorios
             if (['titulo', 'texto'].includes(tipo)) {
                 q.obligatoria = false;
-                q.texto = q.texto ?? " "; //Evita que textos sean null en la BD
+                //q.texto = q.texto ?? " "; //Evita que textos sean null en la BD
+                if (!q.texto || typeof q.texto !== 'string' || q.texto.trim() === '') {
+                    q.texto = "Pregunta";
+                }
+
             }
 
         },
@@ -701,68 +703,6 @@ export function formBuilder(initialSections = [], formId = null) {
             }
         },
 
-/*
-        getEstructura() {
-            return this.secciones.map((sec, si) => ({
-                titulo: sec.titulo,
-                descripcion: sec.descripcion,
-                orden: si + 1,
-
-                preguntas: sec.preguntas.map((p, pi) => ({
-                    tipo: p.tipo,
-                    texto: p.texto,
-                    obligatorio: ['titulo', 'texto'].includes(p.tipo) ? 0 : (p.obligatoria ? 1 : 0),
-                    orden: pi + 1,
-
-                    escala_min: p.tipo === 'escala_lineal' ? p.escala_min : null,
-                    escala_max: p.tipo === 'escala_lineal' ? p.escala_max : null,
-
-                    filas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? p.filas : [],
-                    columnas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? p.columnas : [],
-
-                    opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
-                        ? (p.opciones ?? []).map((o, oi) => ({
-                            texto: o.texto,
-                            orden: oi + 1
-                        }))
-                        : []
-                }))
-            }));
-        }*/
-
-
-
-            /*getEstructura() 
-            {
-                return this.secciones.map((sec, si) => ({
-                    titulo: sec.titulo ?? "",
-                    descripcion: sec.descripcion ?? "",
-                    orden: si + 1,
-
-                    preguntas: sec.preguntas.map((p, pi) => ({
-                        tipo: p.tipo,
-                        texto: (p.texto && p.texto.trim() !== "") ? p.texto : " ",
- 
-                        obligatorio: ['titulo', 'texto'].includes(p.tipo) ? 0 : (p.obligatoria ? 1 : 0),
-                        orden: pi + 1,
-
-                        escala_min: p.tipo === 'escala_lineal' ? (p.escala_min ?? 1) : null,
-                        escala_max: p.tipo === 'escala_lineal' ? (p.escala_max ?? 5) : null,
-
-                        filas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? (p.filas ?? []) : [],
-                        columnas: ['cuadricula_opciones', 'cuadricula_casillas'].includes(p.tipo) ? (p.columnas ?? []) : [],
-
-                        opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
-                            ? (p.opciones ?? []).map((o, oi) => ({
-                                texto: o.texto ?? "",
-                                orden: oi + 1
-                            }))
-                            : []
-                    }))
-                }));
-            }*/
-
-
                 getEstructura() {
                     return this.secciones.map((sec, si) => ({
                         titulo: sec.titulo?.trim() || " ",
@@ -771,7 +711,11 @@ export function formBuilder(initialSections = [], formId = null) {
 
                         preguntas: sec.preguntas.map((p, pi) => ({
                             tipo: p.tipo,
-                            texto: p.texto?.trim() || " ",
+                            //texto: p.texto?.trim() || " ",
+                            texto: (typeof p.texto === 'string' && p.texto.trim() !== '')
+                                ? p.texto.trim()
+                                : 'Pregunta',
+
                             obligatorio: ['titulo', 'texto'].includes(p.tipo) ? 0 : (p.obligatoria ? 1 : 0),
                             orden: pi + 1,
 
@@ -794,19 +738,26 @@ export function formBuilder(initialSections = [], formId = null) {
                                 : [],
 
                             // SOLO para OPCIONES (NO CUADRÍCULAS)
-                            opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
+                            /*opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
                                 ? (p.opciones ?? []).map(o => ({
                                     texto: o.texto?.trim() || "Opción",
                                     fila: null,
                                     columna: null
                                 }))
-                                : []
+                                : []*/
+
+                                opciones: ['opcion_multiple', 'casillas', 'desplegable'].includes(p.tipo)
+                                    ? (p.opciones ?? []).map((o, oi) => ({
+                                        texto: (o.texto ?? '').trim() === '' ? `Opción ${oi + 1}` : o.texto.trim(),
+                                        orden: oi + 1,
+                                        fila: null,
+                                        columna: null
+                                    }))
+                                    : []
+
                         }))
                     }));
                 },
-
-
-
 
 
                 generarOpcionesCuadricula(p) {
