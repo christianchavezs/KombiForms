@@ -13,11 +13,11 @@ class Pregunta extends Model
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [
-        'seccion_id','tipo','texto','obligatoria','orden','escala_min','escala_max'
+        'seccion_id','tipo','texto','obligatorio','orden','escala_min','escala_max'
     ];
 
     protected $casts = [
-        'obligatoria' => 'boolean'
+        'obligatorio' => 'boolean'
     ];
 
     public function seccion()

@@ -15,10 +15,10 @@ class EstructuraFormularioService
     {
         DB::transaction(function () use ($formulario, $estructura) {
 
-            // 1️⃣ Obtener las secciones enviadas desde el frontend
+            // 1 Obtener las secciones enviadas desde el frontend
             $secciones = $estructura;
 
-            // 2️⃣ Eliminar estructura anterior
+            // 2 Eliminar estructura anterior
             $formulario->secciones()->each(function ($seccion) {
                 $seccion->preguntas()->each(function ($pregunta) {
                     $pregunta->opciones()->delete();
@@ -27,7 +27,7 @@ class EstructuraFormularioService
             });
             $formulario->secciones()->delete();
 
-            // 3️⃣ Guardar nueva estructura
+            // 3 Guardar nueva estructura
             foreach ($secciones as $ordenSeccion => $dataSeccion) {
 
                 $seccion = Seccion::create([
@@ -44,8 +44,11 @@ class EstructuraFormularioService
                         'seccion_id'  => $seccion->id,
                         'tipo'        => $dataPregunta['tipo'] ?? null,
                         'texto'       => $dataPregunta['texto'] ?? null,
-                        'obligatorio' => $dataPregunta['obligatorio'] ?? 0,
-                        'orden'       => $ordenPregunta + 1,
+                       // 'obligatorio' => $dataPregunta['obligatorio'] ?? 0,
+                       'obligatorio' => isset($dataPregunta['obligatorio']) 
+                            ? (int) $dataPregunta['obligatorio'] 
+                            : 0, 
+                       'orden'       => $ordenPregunta + 1,
                         'escala_min'  => $dataPregunta['escala_min'] ?? null,
                         'escala_max'  => $dataPregunta['escala_max'] ?? null,
                     ]);
@@ -88,7 +91,7 @@ class EstructuraFormularioService
                             ]);
                         }
 
-                        // ❌ Ya no guardamos las combinaciones fila/columna (opciones_cuadricula)
+                        //  Ya no guardamos las combinaciones fila/columna (opciones_cuadricula)
                         Log::info('Guardando cuadrícula', [
                             'tipo'        => $pregunta->tipo,
                             'pregunta_id' => $pregunta->id,

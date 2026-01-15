@@ -437,12 +437,12 @@
 
                                     <!-- Toggle -->
                                     <button
-                                        @click="pregunta.obligatoria = !pregunta.obligatoria"
-                                        :class="pregunta.obligatoria ? 'bg-indigo-600' : 'bg-gray-300'"
+                                        @click="pregunta.obligatorio = pregunta.obligatorio === 1 ? 0 : 1"
+                                        :class="pregunta.obligatorio === 1 ? 'bg-indigo-600' : 'bg-gray-300'"
                                         class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
                                     >
                                         <span
-                                            :class="pregunta.obligatoria ? 'translate-x-6' : 'translate-x-1'"
+                                            :class="pregunta.obligatorio === 1 ? 'translate-x-6' : 'translate-x-1'"
                                             class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"
                                         ></span>
                                     </button>

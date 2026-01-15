@@ -38,7 +38,7 @@ function createQuestion(text = "Nuevo elemento", tipo = "texto_corto") {
     id: uid("q-"),
     tipo,
     texto: text ?? " ",
-    obligatoria: false,
+    obligatorio: 0,
 
     escala_min: 1,
     escala_max: 5,
@@ -75,8 +75,9 @@ function normalizarSeccion(sec) {
       id: p.id ?? uid("p-"),
       tipo: p.tipo ?? "texto_corto",
       texto: p.texto ?? "",
-      obligatoria: !!p.obligatoria,
-
+   
+      obligatorio: Number(p.obligatorio) === 1 ? 1 : 0,
+      
       orden: p.orden ?? 1,
       escala_min: p.escala_min ?? 1,
       escala_max: p.escala_max ?? 5,
@@ -106,25 +107,17 @@ function normalizarSeccion(sec) {
 // ======================================================
 
 export function formBuilder(initialSections = [], formId = null) {
-  /*if (!Array.isArray(initialSections) || initialSections.length === 0) {
-    initialSections = [
-      {
-        id: null,
-        nombre: "Nueva sección",
-        orden: 1,
-        preguntas: [],
-      },
-    ]
-  }*/
+ 
  if (!Array.isArray(initialSections) || initialSections.length === 0) {
   initialSections = [createSection("Sección 1")];
-}
-
-
+  }
+  
   const secciones =
     Array.isArray(initialSections) && initialSections.length
       ? initialSections.map(normalizarSeccion)
       : [createSection("Sección 1")]
+
+
 
   return {
     formId: formId ?? null,
@@ -188,7 +181,7 @@ export function formBuilder(initialSections = [], formId = null) {
         id: uid("q-"),
         texto: textoDefault, // Use default text instead of empty string
         tipo: tipo,
-        obligatoria: false,
+        obligatorio: 0,
         opciones: [],
         filas: [],
         columnas: [],
@@ -216,7 +209,7 @@ export function formBuilder(initialSections = [], formId = null) {
     // ------------------------------
     // Helper: normalize question structure after type change
     // ------------------------------
-    _ensureStructureForTipo(q, tipo) {
+    /*_ensureStructureForTipo(q, tipo) {
       // initialize fields to safe defaults
       q.opciones = Array.isArray(q.opciones) ? q.opciones : []
       q.filas = Array.isArray(q.filas) ? q.filas : []
@@ -247,6 +240,71 @@ export function formBuilder(initialSections = [], formId = null) {
       } else {
         q.filas = q.filas.length ? q.filas : []
         q.columnas = q.columnas.length ? q.columnas : []
+      }
+    },*/
+
+    _ensureStructureForTipo(q, tipo) {
+      // inicializar campos con valores seguros
+      q.opciones = Array.isArray(q.opciones) ? q.opciones : []
+      q.filas = Array.isArray(q.filas) ? q.filas : []
+      q.columnas = Array.isArray(q.columnas) ? q.columnas : []
+      q.escala_min = q.escala_min ?? 1
+      q.escala_max = q.escala_max ?? 5
+
+      // Tipos de opción múltiple
+      if (["opcion_multiple", "casillas", "desplegable"].includes(tipo)) {
+        if (!q.opciones.length) {
+          q.opciones = [
+            { id: uid("o-"), texto: "Opción 1", fila: null, columna: null },
+            { id: uid("o-"), texto: "Opción 2", fila: null, columna: null },
+          ]
+        } else {
+          q.opciones = q.opciones.map(o => ({
+            ...o,
+            id: o.id ?? uid("o-")
+          }))
+        }
+      } else {
+        q.opciones = q.opciones.length ? q.opciones.map(o => ({
+          ...o,
+          id: o.id ?? uid("o-")
+        })) : []
+      }
+
+      // Escala lineal
+      if (tipo === "escala_lineal") {
+        q.escala_min = q.escala_min ?? 1
+        q.escala_max = q.escala_max ?? 5
+      }
+
+      // Cuadrículas
+      if (["cuadricula_opciones", "cuadricula_casillas"].includes(tipo)) {
+        if (!q.filas.length) {
+          q.filas = [{ id: uid("f-"), texto: "Fila 1" }]
+        } else {
+          q.filas = q.filas.map(f => ({
+            ...f,
+            id: f.id ?? uid("f-")
+          }))
+        }
+
+        if (!q.columnas.length) {
+          q.columnas = [{ id: uid("c-"), texto: "Columna 1" }]
+        } else {
+          q.columnas = q.columnas.map(c => ({
+            ...c,
+            id: c.id ?? uid("c-")
+          }))
+        }
+      } else {
+        q.filas = q.filas.length ? q.filas.map(f => ({
+          ...f,
+          id: f.id ?? uid("f-")
+        })) : []
+        q.columnas = q.columnas.length ? q.columnas.map(c => ({
+          ...c,
+          id: c.id ?? uid("c-")
+        })) : []
       }
     },
 
@@ -610,7 +668,7 @@ export function formBuilder(initialSections = [], formId = null) {
 
       // Títulos y textos nunca pueden ser obligatorios
       if (["titulo", "texto"].includes(tipo)) {
-        q.obligatoria = false
+        q.obligatorio = false
         q.texto = q.texto ?? " " //Evita que textos sean null en la BD
       }
     },
@@ -675,10 +733,10 @@ export function formBuilder(initialSections = [], formId = null) {
         return;
       }
 
-      // 🔥 Obtener estructura final usando tu función ya corregida
+      //  Obtener estructura final usando tu función ya corregida
       const estructura = this.getEstructura();
 
-      console.log("📤 Enviando al backend:", JSON.stringify({
+      console.log(" Enviando al backend:", JSON.stringify({
         estructura: estructura
         }, null, 2));
 
@@ -693,7 +751,7 @@ export function formBuilder(initialSections = [], formId = null) {
             "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
           },
 
-          // 🔥 IMPORTANTE: mandar solo { estructura }
+          //  IMPORTANTE: mandar solo { estructura }
           body: JSON.stringify({
             estructura: estructura
           }),
@@ -725,24 +783,24 @@ export function formBuilder(initialSections = [], formId = null) {
     preguntas: sec.preguntas.map((p, pi) => {
 
       // ======================================================
-      // 🔥 1) SINCRONIZAR CUADRÍCULA Y LOG DE ESTRUCTURA COMPLETA
+      //  1) SINCRONIZAR CUADRÍCULA Y LOG DE ESTRUCTURA COMPLETA
       // ======================================================
       if (["cuadricula_opciones", "cuadricula_casillas"].includes(p.tipo)) {
           cuadriculaAux.ensureCuadriculaStructure(p);
 
           console.log(
-            "🧩 Datos de cuadrícula después de ensureCuadriculaStructure:",
+            " Datos de cuadrícula después de ensureCuadriculaStructure:",
             JSON.parse(JSON.stringify(p))
           );
       }
 
       // ======================================================
-      // 🔥 2) GENERAR OBJETO FINAL DE LA PREGUNTA
+      //  2) GENERAR OBJETO FINAL DE LA PREGUNTA
       // ======================================================
       const preguntaFinal = {
         tipo: p.tipo,
         texto: (p.texto?.trim() || "Pregunta sin título"),
-        obligatorio: ["titulo", "texto"].includes(p.tipo) ? 0 : p.obligatoria ? 1 : 0,
+        obligatorio: ["titulo", "texto"].includes(p.tipo) ? 0 : p.obligatorio ? 1 : 0,
         orden: pi + 1,
 
         escala_min: p.tipo === "escala_lineal" ? (p.escala_min ?? 1) : null,
@@ -777,11 +835,14 @@ export function formBuilder(initialSections = [], formId = null) {
       };
 
       // ======================================================
-      // 🔥 3) LOG DE LA PREGUNTA FINAL QUE SE ENVÍA AL BACKEND
+      //  3) LOG DE LA PREGUNTA FINAL QUE SE ENVÍA AL BACKEND
       // ======================================================
       console.log(
-        "📦 Pregunta final generada:",
+        " Pregunta final generada:",
         JSON.parse(JSON.stringify(preguntaFinal))
+
+      
+      
       );
 
       return preguntaFinal;
