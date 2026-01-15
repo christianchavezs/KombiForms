@@ -7,6 +7,7 @@ use App\Models\Seccion;
 use App\Models\Pregunta;
 use App\Models\Opcion;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EstructuraFormularioService
 {
@@ -14,10 +15,10 @@ class EstructuraFormularioService
     {
         DB::transaction(function () use ($formulario, $estructura) {
 
-            // 1  Obtener las secciones enviadas desde el frontend
-            $secciones = $estructura; 
+            // 1️⃣ Obtener las secciones enviadas desde el frontend
+            $secciones = $estructura;
 
-            // 2 Eliminar estructura anterior
+            // 2️⃣ Eliminar estructura anterior
             $formulario->secciones()->each(function ($seccion) {
                 $seccion->preguntas()->each(function ($pregunta) {
                     $pregunta->opciones()->delete();
@@ -26,7 +27,7 @@ class EstructuraFormularioService
             });
             $formulario->secciones()->delete();
 
-            // 3 Guardar nueva estructura
+            // 3️⃣ Guardar nueva estructura
             foreach ($secciones as $ordenSeccion => $dataSeccion) {
 
                 $seccion = Seccion::create([
@@ -49,19 +50,50 @@ class EstructuraFormularioService
                         'escala_max'  => $dataPregunta['escala_max'] ?? null,
                     ]);
 
-                    // Guardar opciones según tipo
-                    foreach ($dataPregunta['opciones'] ?? [] as $opcionData) {
+                    // ===============================
+                    // GUARDAR OPCIONES SEGÚN TIPO
+                    // ===============================
 
-                        // Para cuadricula, usamos fila y columna
-                        $fila = $opcionData['fila'] ?? null;
-                        $columna = $opcionData['columna'] ?? null;
+                    // Tipos simples (opción múltiple, casillas, desplegable)
+                    if (in_array($pregunta->tipo, ['opcion_multiple', 'casillas', 'desplegable'])) {
+                        foreach ($dataPregunta['opciones'] ?? [] as $opcionData) {
+                            Opcion::create([
+                                'pregunta_id' => $pregunta->id,
+                                'texto'       => !empty($opcionData['texto']) ? $opcionData['texto'] : 'Opción Default',
+                                'fila'        => null,
+                                'columna'     => null,
+                            ]);
+                        }
+                    }
 
-                        Opcion::create([
+                    // Tipos de cuadrícula (opciones/casillas)
+                    if (in_array($pregunta->tipo, ['cuadricula_opciones', 'cuadricula_casillas'])) {
+                        // Guardar filas como encabezados
+                        foreach ($dataPregunta['filas'] ?? [] as $filaData) {
+                            Opcion::create([
+                                'pregunta_id' => $pregunta->id,
+                                'texto'       => !empty($filaData['texto']) ? $filaData['texto'] : 'Fila Default',
+                                'fila'        => $filaData['fila'] ?? null,
+                                'columna'     => null,
+                            ]);
+                        }
+
+                        // Guardar columnas como encabezados
+                        foreach ($dataPregunta['columnas'] ?? [] as $colData) {
+                            Opcion::create([
+                                'pregunta_id' => $pregunta->id,
+                                'texto'       => !empty($colData['texto']) ? $colData['texto'] : 'Columna Default',
+                                'fila'        => null,
+                                'columna'     => $colData['columna'] ?? null,
+                            ]);
+                        }
+
+                        // ❌ Ya no guardamos las combinaciones fila/columna (opciones_cuadricula)
+                        Log::info('Guardando cuadrícula', [
+                            'tipo'        => $pregunta->tipo,
                             'pregunta_id' => $pregunta->id,
-                            'texto'       => $opcionData['texto'] ?? null,
-                            //'orden'       => $opcionData['orden'] ?? null,
-                            'fila'        => $fila,
-                            'columna'     => $columna,
+                            'filas'       => $dataPregunta['filas'] ?? [],
+                            'columnas'    => $dataPregunta['columnas'] ?? [],
                         ]);
                     }
                 }

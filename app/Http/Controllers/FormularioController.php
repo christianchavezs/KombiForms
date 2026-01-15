@@ -86,12 +86,40 @@ class FormularioController extends Controller
     // EDITAR FORMULARIO (Constructor)
     // ===============================================
     public function editar($id)
-    {
-        $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
+{
+    $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
 
+    // Mapear estructura para separar filas, columnas y celdas
+    $formulario->secciones->each(function ($seccion) {
+        $seccion->preguntas->each(function ($pregunta) {
+            if (in_array($pregunta->tipo, ['cuadricula_opciones', 'cuadricula_casillas'])) {
+                $pregunta->filas = $pregunta->opciones
+                    ->whereNotNull('fila')
+                    ->whereNull('columna')
+                    ->map(fn($o) => ['texto' => $o->texto, 'fila' => $o->fila])
+                    ->values();
 
-        return view('formularios.editar', compact('formulario'));
-    }
+                $pregunta->columnas = $pregunta->opciones
+                    ->whereNotNull('columna')
+                    ->whereNull('fila')
+                    ->map(fn($o) => ['texto' => $o->texto, 'columna' => $o->columna])
+                    ->values();
+
+                $pregunta->opciones_cuadricula = $pregunta->opciones
+                    ->whereNotNull('fila')
+                    ->whereNotNull('columna')
+                    ->map(fn($o) => [
+                        'texto' => $o->texto,
+                        'fila' => $o->fila,
+                        'columna' => $o->columna
+                    ])
+                    ->values();
+            }
+        });
+    });
+
+    return view('formularios.editar', compact('formulario'));
+}
 
 
     // ===============================================

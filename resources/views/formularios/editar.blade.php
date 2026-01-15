@@ -155,29 +155,29 @@
                 {{-- Arreglado el drag & drop con manejo correcto de Alpine.js --}}
                 
                 <div
-    class="space-y-4"
-    x-ref="sortableContainer"
-    x-effect="
-        if (!$el._sortable && seccion.preguntas.length > 0) {
-            console.log('Inicializando Sortable:', seccion.titulo);
+                    class="space-y-4"
+                    x-ref="sortableContainer"
+                    x-effect="
+                        if (!$el._sortable && seccion.preguntas.length > 0) {
+                            console.log('Inicializando Sortable:', seccion.titulo);
 
-            $el._sortable = Sortable.create($el, {
-                animation: 200,
-                handle: '.drag-handle',
-                draggable: '.pregunta-item',
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
+                            $el._sortable = Sortable.create($el, {
+                                animation: 200,
+                                handle: '.drag-handle',
+                                draggable: '.pregunta-item',
+                                ghostClass: 'sortable-ghost',
+                                chosenClass: 'sortable-chosen',
 
-                onEnd: (evt) => {
-                    if (evt.oldIndex === evt.newIndex) return;
+                                onEnd: (evt) => {
+                                    if (evt.oldIndex === evt.newIndex) return;
 
-                    const moved = seccion.preguntas.splice(evt.oldIndex, 1)[0];
-                    seccion.preguntas.splice(evt.newIndex, 0, moved);
-                }
-            });
-        }
-    "
->
+                                    const moved = seccion.preguntas.splice(evt.oldIndex, 1)[0];
+                                    seccion.preguntas.splice(evt.newIndex, 0, moved);
+                                }
+                            });
+                        }
+                    "
+                >
      
                     <template
                         x-for="(pregunta, pIndex) in seccion.preguntas"
@@ -311,7 +311,12 @@
                                 </div>
                             </template>
 
-                            {{-- CUADRÍCULA --}}
+
+                            {{-- ULTIMA FUNCION MOVIDA EL SABADO 10 DE ENERO DE 2026 QUEDA ARREGLO PENDIENTE --}}
+
+
+                            
+                            {{-- CUADRÍCULA --}} 
                             <template x-if="['cuadricula_opciones','cuadricula_casillas'].includes(pregunta.tipo)">
                                 <div class="grid grid-cols-2 gap-4 mb-4 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
                                     <div>
@@ -358,6 +363,46 @@
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- OPCIONES DE LA CUADRÍCULA -->
+                                <div class="mt-6">
+                                    <h4 class="text-sm font-bold text-indigo-900 mb-3">Opciones por celda</h4>
+
+                                    <table class="w-full border-collapse">
+                                        <thead>
+                                            <tr>
+                                                <th class="border p-2 bg-indigo-100"></th>
+                                                <template x-for="(col, cIndex) in pregunta.columnas" :key="cIndex">
+                                                    <th class="border p-2 bg-indigo-100 text-sm" x-text="col.texto"></th>
+                                                </template>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            <template x-for="(fila, fIndex) in pregunta.filas" :key="fIndex">
+                                                <tr>
+                                                    <td class="border p-2 bg-indigo-50 text-sm font-semibold" x-text="fila.texto"></td>
+
+                                                    <template x-for="(columna, cIndex) in pregunta.columnas" :key="cIndex">
+                                                        <td class="border p-2">
+
+                                                            <input
+                                                                class="w-full border border-gray-300 rounded p-1 text-sm"
+                                                                placeholder="Texto opción"
+                                                                x-model="pregunta.opciones[fIndex][cIndex].texto"
+                                                            >
+
+                                                        </td>
+                                                    </template>
+
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            
+
                             </template>
 
 
@@ -660,6 +705,8 @@ document.addEventListener("alpine:init", () => {
     Alpine.data("formBuilder", window.formBuilder);
 });
 </script>
+
+
 
 @endsection
 
