@@ -7,8 +7,6 @@
 import * as cuadriculaAux from './cuadriculaAux.js';
 
 
-
-
 // ------------------------ UID -------------------------
 function uid(prefix = "") {
   return prefix + Date.now().toString(36) + "-" + Math.random().toString(36).substr(2, 6)
@@ -205,43 +203,6 @@ export function formBuilder(initialSections = [], formId = null) {
     get tipos() {
       return QUESTION_TYPES
     },
-
-    // ------------------------------
-    // Helper: normalize question structure after type change
-    // ------------------------------
-    /*_ensureStructureForTipo(q, tipo) {
-      // initialize fields to safe defaults
-      q.opciones = Array.isArray(q.opciones) ? q.opciones : []
-      q.filas = Array.isArray(q.filas) ? q.filas : []
-      q.columnas = Array.isArray(q.columnas) ? q.columnas : []
-      q.escala_min = q.escala_min ?? 1
-      q.escala_max = q.escala_max ?? 5
-
-      if (["opcion_multiple", "casillas", "desplegable"].includes(tipo)) {
-        if (!q.opciones.length) {
-          q.opciones = [
-            { id: uid("o-"), texto: "Opción 1", fila: null, columna: null },
-            { id: uid("o-"), texto: "Opción 2", fila: null, columna: null },
-          ]
-        }
-      } else {
-        // not choice-like -> keep opciones empty
-        q.opciones = q.opciones.length ? q.opciones : []
-      }
-
-      if (tipo === "escala_lineal") {
-        q.escala_min = q.escala_min ?? 1
-        q.escala_max = q.escala_max ?? 5
-      }
-
-      if (["cuadricula_opciones", "cuadricula_casillas"].includes(tipo)) {
-        if (!q.filas.length) q.filas = [{ id: uid("f-"), texto: "Fila 1" }]
-        if (!q.columnas.length) q.columnas = [{ id: uid("c-"), texto: "Columna 1" }]
-      } else {
-        q.filas = q.filas.length ? q.filas : []
-        q.columnas = q.columnas.length ? q.columnas : []
-      }
-    },*/
 
     _ensureStructureForTipo(q, tipo) {
       // inicializar campos con valores seguros

@@ -1,29 +1,34 @@
 @extends('layouts.app')
 
-@section('title', 'Crear Formulario')
+@section('title', 'Configurar Formulario')
 
 @section('content')
 <div class="max-w-3xl mx-auto">
 
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Crear Nuevo Formulario</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Configuración del Formulario</h1>
 
     <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
 
-        <form action="{{ route('formularios.guardar') }}" method="POST"
-              x-data="{ anonimo: false, correo: false, mostrarError: false }"
+        <form action="{{ route('formularios.actualizar', $formulario->id) }}" method="POST"
+              x-data="{ anonimo: {{ $formulario->permitir_anonimo ? 'true' : 'false' }}, 
+                        correo: {{ $formulario->requiere_correo ? 'true' : 'false' }},
+                        mostrarError: false }"
               @submit.prevent="if(!anonimo && !correo){ mostrarError = true } else { $el.submit() }">
             @csrf
+            @method('PUT')
 
             {{-- Título --}}
             <div class="mb-5">
                 <label class="block text-gray-700 font-medium mb-1">Título del formulario *</label>
-                <input type="text" name="titulo" class="w-full rounded-lg border-gray-300 focus:ring-indigo-500" required>
+                <input type="text" name="titulo" value="{{ old('titulo', $formulario->titulo) }}"
+                       class="w-full rounded-lg border-gray-300 focus:ring-indigo-500" required>
             </div>
 
             {{-- Descripción --}}
             <div class="mb-5">
                 <label class="block text-gray-700 font-medium mb-1">Descripción</label>
-                <textarea name="descripcion" rows="3" class="w-full rounded-lg border-gray-300 focus:ring-indigo-500"></textarea>
+                <textarea name="descripcion" rows="3"
+                          class="w-full rounded-lg border-gray-300 focus:ring-indigo-500">{{ old('descripcion', $formulario->descripcion) }}</textarea>
             </div>
 
             {{-- Configuraciones --}}
@@ -48,7 +53,8 @@
 
                 {{-- Una respuesta por persona --}}
                 <label class="flex items-center gap-3">
-                    <input type="checkbox" name="una_respuesta" class="rounded">
+                    <input type="checkbox" name="una_respuesta" class="rounded"
+                           {{ $formulario->una_respuesta ? 'checked' : '' }}>
                     <span class="text-gray-700">Permitir solo 1 respuesta por persona</span>
                 </label>
             </div>
@@ -63,12 +69,14 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Fecha de inicio</label>
                     <input type="datetime-local" name="fecha_inicio"
+                           value="{{ old('fecha_inicio', $formulario->fecha_inicio) }}"
                            class="w-full rounded-lg border-gray-300 focus:ring-indigo-500">
                 </div>
 
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Fecha de fin</label>
                     <input type="datetime-local" name="fecha_fin"
+                           value="{{ old('fecha_fin', $formulario->fecha_fin) }}"
                            class="w-full rounded-lg border-gray-300 focus:ring-indigo-500">
                 </div>
             </div>
@@ -77,7 +85,7 @@
             <div class="mt-8">
                 <button type="submit"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl shadow">
-                    Guardar formulario
+                    Guardar cambios
                 </button>
             </div>
 

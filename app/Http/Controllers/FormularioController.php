@@ -123,6 +123,16 @@ class FormularioController extends Controller
 
 
     // ===============================================
+    // CONFIGURACIÓN DEL FORMULARIO
+    // ===============================================
+    public function configuracion($id)
+    {
+        $formulario = Formulario::findOrFail($id);
+        return view('formularios.configuracion', compact('formulario'));
+    }
+
+
+    // ===============================================
     // ACTUALIZAR FORMULARIO
     // ===============================================
     public function actualizar(Request $request, $id)
@@ -155,6 +165,7 @@ class FormularioController extends Controller
             ->with('success', 'Formulario eliminado.');
     }
 
-    
+   
+
 
 }

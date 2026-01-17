@@ -106,18 +106,37 @@
             </button>
         </div>
 
-        {{-- Botón Guardar Mejorado --}}
-        <div class="p-4 border-t border-gray-200 bg-gray-50">
+    
+
+        <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+            {{-- Configuración del Formulario --}}
+            <button onclick="window.location='{{ route('formularios.configuracion', $formulario->id) }}'"
+                    class="w-full flex items-center gap-3 bg-gradient-to-r from-gray-500 to-gray-600
+                        hover:from-gray-600 hover:to-gray-700 text-white px-4 py-3 rounded-xl
+                        shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105
+                        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                <!-- Ícono de llave inglesa -->
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 21l3-3h3l7-7a4 4 0 10-5.657-5.657l-7 7v3l-3 3z"/>
+                </svg>
+                <span x-show="!menuColapsado" class="font-semibold">Configuración Formulario</span>
+            </button>
+
+            {{-- Guardar Formulario --}}
             <button @click="guardar()"
                     class="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-gray-800 to-gray-900 
-                           hover:from-gray-900 hover:to-black text-white px-4 py-3 rounded-xl
-                           shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                        hover:from-gray-900 hover:to-black text-white px-4 py-2 rounded-lg
+                        shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
                 <span x-show="!menuColapsado" class="font-bold">Guardar Formulario</span>
             </button>
         </div>
+
+
     </aside>
 
     {{-- ================= ÁREA PRINCIPAL ================= --}}
