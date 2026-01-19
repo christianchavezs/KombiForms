@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormularioController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstructuraFormularioController;
+use App\Http\Controllers\Usuarios;
 
 // ===============================
 // REDIRECCIÓN A DASHBOARD
@@ -71,6 +72,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/formularios/{formulario}/estructura', [EstructuraFormularioController::class, 'guardar'] )->name('formularios.estructura.guardar');
 
+
+    Route::get('/usuarios',[Usuarios::class, 'index'])->name('Usuarios');
+    Route::patch('/usuarios/{user}/toggle', [Usuarios::class, 'toggleActivo'])->name('usuarios.toggle');
 
 
     Route::get('/formularios/{id}/configuracion', [FormularioController::class, 'configuracion'])
