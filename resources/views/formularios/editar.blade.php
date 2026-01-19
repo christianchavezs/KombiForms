@@ -109,8 +109,9 @@
     
 
         <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+    
             {{-- Configuración del Formulario --}}
-            <button onclick="window.location='{{ route('formularios.configuracion', $formulario->id) }}'"
+            <button onclick="window.location='{{ route('formularios.configuracion', ['id' => $formulario->id, 'from' => 'editar']) }}'"
                     class="w-full flex items-center gap-3 bg-gradient-to-r from-gray-500 to-gray-600
                         hover:from-gray-600 hover:to-gray-700 text-white px-4 py-3 rounded-xl
                         shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105

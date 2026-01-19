@@ -5,6 +5,27 @@
 @section('content')
 <div class="max-w-3xl mx-auto">
 
+    {{-- Botón Regresar dinámico --}}
+    <div class="mt-6 mb-4">
+        @php
+            $from = request('from');
+            if ($from === 'editar') {
+                $backRoute = route('formularios.editar', $formulario->id);
+            } else {
+                $backRoute = route('formularios.index');
+            }
+        @endphp
+
+        <a href="{{ $backRoute }}"
+        class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 19l-7-7 7-7" />
+            </svg>
+            Regresar
+        </a>
+    </div>
+
     <h1 class="text-3xl font-bold text-gray-800 mb-6">Configuración del Formulario</h1>
 
     <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">

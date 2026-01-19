@@ -73,12 +73,17 @@
                 </div>
             </div>
 
-            {{-- Botón --}}
-            <div class="mt-8">
+            {{-- Botones --}}
+            <div class="mt-8 flex items-center gap-4">
                 <button type="submit"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl shadow">
                     Guardar formulario
                 </button>
+
+                <a href="{{ route('formularios.index') }}"
+                   class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-6 py-3 rounded-xl shadow">
+                    Cancelar
+                </a>
             </div>
 
         </form>

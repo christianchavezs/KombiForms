@@ -76,6 +76,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/formularios/{id}/configuracion', [FormularioController::class, 'configuracion'])
     ->name('formularios.configuracion');
 
+   
+
+    Route::get('/loginAnonimo', function () {
+        return view('formularios.loginAnonimo');
+    })->name('loginAnonimo');
+
 });
 
 
