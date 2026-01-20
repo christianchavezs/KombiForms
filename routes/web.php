@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Contestar_FormularioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormularioController;
@@ -97,6 +98,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/loginAnonimo', function () {
         return view('formularios.loginAnonimo');
     })->name('loginAnonimo');
+
+
+
+    Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar']);
+    Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder']);
 
 });
 

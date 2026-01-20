@@ -29,4 +29,18 @@ class Pregunta extends Model
     {
         return $this->hasMany(Opcion::class, 'pregunta_id')->orderBy('id','asc');
     }
+
+    public function filas()
+    {
+        return $this->hasMany(Opcion::class, 'pregunta_id')
+                    ->whereNotNull('fila')
+                    ->orderBy('fila', 'asc');
+    }
+
+    public function columnas()
+    {
+        return $this->hasMany(Opcion::class, 'pregunta_id')
+                    ->whereNotNull('columna')
+                    ->orderBy('columna', 'asc');
+    }
 }

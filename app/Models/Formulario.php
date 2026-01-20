@@ -57,4 +57,7 @@ class Formulario extends Model
     {
         return $this->hasMany(Seccion::class, 'formulario_id')->orderBy('orden');
     }
+
+
+
 }
