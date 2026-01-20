@@ -67,6 +67,11 @@
                            Editar
                         </a>
                         <a href="#" class="text-indigo-600 hover:underline text-sm">Ver enlaces</a>
+                        <a href="#"
+                            onclick="copiarEnlace('{{ route('formularios.acceder', $form->token) }}')"
+                            class="text-indigo-600 hover:underline text-sm">
+                            Ver enlace
+                            </a>
                         <a href="#" class="text-green-600 hover:underline text-sm">Respuestas</a>
 
                         <form action="#" method="POST" class="inline-block">
@@ -104,4 +109,14 @@
     </div>
 
 </div>
+
+<script>
+    function copiarEnlace(url) {
+        navigator.clipboard.writeText(url).then(function() {
+            alert("Enlace copiado: " + url);
+        }, function(err) {
+            console.error("Error al copiar enlace: ", err);
+        });
+    }
+</script>
 @endsection

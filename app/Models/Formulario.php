@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Formulario extends Model
 {
@@ -19,7 +20,8 @@ class Formulario extends Model
         'requiere_correo',
         'una_respuesta',
         'fecha_inicio',
-        'fecha_fin'
+        'fecha_fin',
+        'token', // importante incluirlo
     ];
 
     protected $dates = [
@@ -34,6 +36,18 @@ class Formulario extends Model
     const CREATED_AT = 'creado_en';
     const UPDATED_AT = 'actualizado_en';
 
+    // Generar token automáticamente al crear un formulario
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($formulario) {
+            if (empty($formulario->token)) {
+                $formulario->token = Str::random(16);
+            }
+        });
+    }
+
     public function respuestas()
     {
         return $this->hasMany(Respuesta::class, 'formulario_id');
@@ -43,6 +57,4 @@ class Formulario extends Model
     {
         return $this->hasMany(Seccion::class, 'formulario_id')->orderBy('orden');
     }
-
-
 }

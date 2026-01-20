@@ -22,6 +22,18 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('dashboard');
 
+// ===============================
+// ENLACES PÚBLICOS DE FORMULARIOS
+// ===============================
+
+// Enlace único para acceder a un formulario por token
+Route::get('/f/{token}', [FormularioController::class, 'acceder'])
+    ->name('formularios.acceder');
+
+// Vista para responder un formulario específico
+Route::get('/formularios/{id}/responder', [FormularioController::class, 'responder'])
+    ->name('formularios.responder');
+
 
 // ===============================
 // FORMULARIOS (CRUD + extras)
@@ -108,3 +120,5 @@ Route::middleware('auth')->group(function () {
 // AUTENTICACIÓN (Breeze / Jetstream)
 // ===============================
 require __DIR__.'/auth.php';
+
+

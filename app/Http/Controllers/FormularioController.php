@@ -166,6 +166,31 @@ class FormularioController extends Controller
     }
 
    
+    // ===============================================
+    // ACCEDER A FORMULARIO POR TOKEN (enlace público)
+    // ===============================================
+    public function acceder($token)
+    {
+        $formulario = Formulario::where('token', $token)->firstOrFail();
+
+        // Si el formulario permite respuestas anónimas → vista loginAnonimo
+        if ($formulario->permitir_anonimo) {
+            return view('formularios.loginAnonimo', compact('formulario'));
+        }
+
+        // Si requiere usuario registrado → redirigir al login normal
+        return redirect()->route('login')->with('redirect_formulario', $formulario->id);
+    }
+
+    // ===============================================
+    // RESPONDER FORMULARIO (vista de encuesta)
+    // ===============================================
+    public function responder($id)
+    {
+        $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
+
+        return view('formularios.responder', compact('formulario'));
+    }
 
 
 }
