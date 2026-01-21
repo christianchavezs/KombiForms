@@ -27,37 +27,71 @@
                             @endif
                         </label>
 
-                        {{-- TEXTO --}}
+                        {{-- TEXTO CORTO--}}
                         @if($pregunta->tipo === 'texto_corto')
-                            <input
-                                type="text"
-                                name="respuestas[{{ $pregunta->id }}]"
-                                class="empresa-input"
-                                {{ $pregunta->obligatorio ? 'required' : '' }}
-                            >
+                            <input type="text" name="respuestas[{{ $pregunta->id }}]" class="empresa-input" {{ $pregunta->obligatorio ? 'required' : '' }} >
 
-                        {{-- PÁRRAFO --}}
-                        @elseif($pregunta->tipo === 'parrafo')
-                            <textarea
-                                name="respuestas[{{ $pregunta->id }}]"
-                                class="empresa-textarea"
-                            ></textarea>
-
+                        {{-- OPCIÓN MÚLTIPLE --}}
+                        @elseif($pregunta->tipo === 'opcion_multiple')
+                            @foreach($pregunta->opciones as $opcion)
+                                <div class="empresa-option">
+                                    <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $opcion->id }}" {{ $pregunta->obligatorio ? 'required' : '' }}>
+                                    <span>{{ $opcion->texto }}</span>
+                                </div>
+                            @endforeach
+                        
                         {{-- ESCALA LINEAL --}}
                         @elseif($pregunta->tipo === 'escala_lineal')
                             <div class="empresa-scale">
                                 @for($i = $pregunta->escala_min; $i <= $pregunta->escala_max; $i++)
                                     <label class="empresa-scale-option">
-                                        <input
-                                            type="radio"
-                                            name="respuestas[{{ $pregunta->id }}]"
-                                            value="{{ $i }}"
-                                            {{ $pregunta->obligatorio ? 'required' : '' }}
-                                        >
+                                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $i }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
                                         <span>{{ $i }}</span>
                                     </label>
                                 @endfor
                             </div>
+
+                        {{-- CASILLA MÚLTIPLE --}}
+                        @elseif($pregunta->tipo === 'cuadricula_casillas') 
+                            <table class="empresa-grid">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        @foreach($pregunta->columnas as $columna)
+                                            <th>{{ $columna->texto }}</th>
+                                        @endforeach
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach($pregunta->filas as $fila)
+                                        <tr>
+                                            <td class="empresa-grid-row">
+                                                {{ $fila->texto }}
+                                            </td>
+
+                                            @foreach($pregunta->columnas as $columna)
+                                                <td class="empresa-grid-cell">
+                                                    <input type="checkbox" name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}][]" value="{{ $columna->id }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+
+                        {{-- PÁRRAFO --}}
+                        @elseif($pregunta->tipo === 'parrafo')
+                            <textarea name="respuestas[{{ $pregunta->id }}]" class="empresa-textarea" ></textarea>
+
+                        {{-- LISTA DE CASILLAS --}}
+                        @elseif($pregunta->tipo === 'casillas')
+                            @foreach($pregunta->opciones as $opcion)
+                                <div class="empresa-option">
+                                    <input type="checkbox" name="respuestas[{{ $pregunta->id }}][]" value="{{ $opcion->id }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
+                                    <span>{{ $opcion->texto }}</span>
+                                </div>
+                            @endforeach
                         
                         {{-- CUADRÍCULA OPCIÓN ÚNICA --}}
                         @elseif($pregunta->tipo === 'cuadricula_opciones')
@@ -80,70 +114,7 @@
 
                                             @foreach($pregunta->columnas as $columna)
                                                 <td class="empresa-grid-cell">
-                                                    <input
-                                                        type="radio"
-                                                        name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}]"
-                                                        value="{{ $columna->id }}"
-                                                        {{ $pregunta->obligatorio ? 'required' : '' }}
-                                                    >
-                                                </td>
-                                            @endforeach
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-
-                        {{-- OPCIÓN MÚLTIPLE --}}
-                        @elseif($pregunta->tipo === 'opcion_multiple')
-                            @foreach($pregunta->opciones as $opcion)
-                                <div class="empresa-option">
-                                    <input
-                                        type="radio"
-                                        name="respuestas[{{ $pregunta->id }}]"
-                                        value="{{ $opcion->id }}"
-                                    >
-                                    <span>{{ $opcion->texto }}</span>
-                                </div>
-                            @endforeach
-
-                        {{-- CASILLAS --}}
-                        @elseif($pregunta->tipo === 'casillas')
-                            @foreach($pregunta->opciones as $opcion)
-                                <div class="empresa-option">
-                                    <input
-                                        type="checkbox"
-                                        name="respuestas[{{ $pregunta->id }}][]"
-                                        value="{{ $opcion->id }}"
-                                    >
-                                    <span>{{ $opcion->texto }}</span>
-                                </div>
-                            @endforeach
-                        {{-- CASILLA MÚLTIPLE --}}
-                        @elseif($pregunta->tipo === 'cuadricula_casillas') 
-                            <table class="empresa-grid">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        @foreach($pregunta->columnas as $columna)
-                                            <th>{{ $columna->texto }}</th>
-                                        @endforeach
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    @foreach($pregunta->filas as $fila)
-                                        <tr>
-                                            <td class="empresa-grid-row">
-                                                {{ $fila->texto }}
-                                            </td>
-
-                                            @foreach($pregunta->columnas as $columna)
-                                                <td class="empresa-grid-cell">
-                                                    <input
-                                                        type="checkbox"
-                                                        name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}][]"
-                                                        value="{{ $columna->id }}"
-                                                    >
+                                                    <input type="radio" name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}]" value="{{ $columna->id }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
                                                 </td>
                                             @endforeach
                                         </tr>

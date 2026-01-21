@@ -98,7 +98,7 @@
     <p>Encuesta</p>
 
     {{-- Botón para iniciar encuesta --}}
-    <a href="{{ route('formularios.index') }}" class="btn">
+    <a href="{{ route('mostrar_anonimos', $formulario->id) }}" class="btn">
         Iniciar Encuesta
     </a>
 

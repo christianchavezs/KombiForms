@@ -13,7 +13,9 @@ use App\Http\Controllers\Usuarios;
 // ===============================
 Route::get('/', function () {
     return redirect()->route('dashboard');
+
 });
+
 
 
 // ===============================
@@ -22,6 +24,7 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('dashboard');
+Route::get('/formulario_anonimo/{formulario}', [Contestar_FormularioController::class, 'mostrar']) ->name('mostrar_anonimos');
 
 // ===============================
 // ENLACES PÚBLICOS DE FORMULARIOS
@@ -106,7 +109,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/formularios/{id}/concentrado/export', [FormularioController::class, 'concentrarRespuestas'])
         ->name('formularios.concentrarRespuestas');
 
-    Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar']);
+    Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar']) ->name('mostrar');
     Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder']);
 
 });
