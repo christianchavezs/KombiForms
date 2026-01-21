@@ -305,7 +305,7 @@
                                 </div>
                             </template>
 
-                            {{-- ESCALA LINEAL --}}
+                            {{-- ESCALA LINEAL
                             <template x-if="pregunta.tipo === 'escala_lineal'">
                                 <div class="grid grid-cols-2 gap-4 mb-4 bg-purple-50 p-4 rounded-lg border border-purple-200">
                                     <div>
@@ -329,10 +329,34 @@
                                             class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
                                     </div>
                                 </div>
+                            </template>--}}
+
+
+                            {{-- ESCALA LINEAL --}}
+                            <template x-if="pregunta.tipo === 'escala_lineal'">
+                                <div class="grid grid-cols-2 gap-4 mb-4 bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Desde</label>
+                                        <input type="number" x-model.number="pregunta.escala_min"
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Hasta</label>
+                                        <input type="number" x-model.number="pregunta.escala_max"
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Etiqueta inicial</label>
+                                        <input x-model="pregunta.etiqueta_inicial"
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-purple-900 uppercase tracking-wide">Etiqueta final</label>
+                                        <input x-model="pregunta.etiqueta_final"
+                                            class="border-2 border-gray-300 focus:border-purple-500 p-2 w-full rounded-lg outline-none mt-1">
+                                    </div>
+                                </div>
                             </template>
-
-
-                            {{-- ULTIMA FUNCION MOVIDA EL SABADO 10 DE ENERO DE 2026 QUEDA ARREGLO PENDIENTE --}}
 
 
                             

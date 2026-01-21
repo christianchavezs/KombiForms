@@ -73,12 +73,16 @@ function normalizarSeccion(sec) {
       id: p.id ?? uid("p-"),
       tipo: p.tipo ?? "texto_corto",
       texto: p.texto ?? "",
-   
+
       obligatorio: Number(p.obligatorio) === 1 ? 1 : 0,
-      
+
       orden: p.orden ?? 1,
       escala_min: p.escala_min ?? 1,
       escala_max: p.escala_max ?? 5,
+
+      // Añadir etiquetas aquí
+      etiqueta_inicial: p.etiqueta_inicial ?? "",
+      etiqueta_final:   p.etiqueta_final ?? "",
 
       filas: (p.filas || []).map((f) => ({
         id: f.id ?? uid("f-"),
@@ -302,7 +306,7 @@ export function formBuilder(initialSections = [], formId = null) {
     },
 
     // ------------------------------
-    // renderPregunta: HTML de vista previa por pregunta (usado en Blade con x-html si quieres)
+    // renderPregunta: HTML de vista previa por pregunta (usado en Blade con x-html)
     // ------------------------------
     renderPregunta(p) {
       if (!p || !p.tipo) return ""
@@ -354,52 +358,51 @@ export function formBuilder(initialSections = [], formId = null) {
           return `<select class="w-full border p-2 rounded" disabled>
                         ${(p.opciones || []).map((o) => `<option>${o.texto ?? "Opción"}</option>`).join("")}
                     </select>`
+        
+
         case "escala_lineal": {
-          const min = Number(p.escala_min ?? 1)
-          const max = Number(p.escala_max ?? 5)
-          const labelMin = p.etiqueta_min ?? ""
-          const labelMax = p.etiqueta_max ?? ""
+        const min = Number(p.escala_min ?? 1)
+        const max = Number(p.escala_max ?? 5)
+        const labelMin = p.etiqueta_inicial ?? ""   // 👈 cambio aquí
+        const labelMax = p.etiqueta_final ?? ""     // 👈 cambio aquí
 
-          const total = max - min + 1
+        const total = max - min + 1
 
-          let etiquetas = ""
-          let radios = ""
-          let numeros = ""
+        let radios = ""
+        let numeros = ""
 
-          for (let i = min; i <= max; i++) {
-            radios += `
-                            <div class="flex-1 text-center">
-                                <input type="radio" disabled>
-                            </div>
-                        `
-
-            numeros += `
-                            <div class="flex-1 text-center text-xs text-gray-600">
-                                ${i}
-                            </div>
-                        `
-          }
-
-          // Etiquetas SOLO en extremos
-          etiquetas = `
-                        <div class="flex">
-                            <div class="flex-1 text-left text-xs text-gray-600">
-                                ${labelMin}
-                            </div>
-                            <div class="flex-1 text-right text-xs text-gray-600">
-                                ${labelMax}
-                            </div>
-                        </div>
-                    `
-
-          return `
-                        <div class="space-y-2">
-                            ${etiquetas}
-                            <div class="flex gap-2">${radios}</div>
-                            <div class="flex gap-2">${numeros}</div>
-                        </div>
-                    `
+        for (let i = min; i <= max; i++) {
+          radios += `
+            <div class="flex-1 text-center">
+              <input type="radio" disabled>
+            </div>
+          `
+          numeros += `
+            <div class="flex-1 text-center text-xs text-gray-600">
+              ${i}
+            </div>
+          `
         }
+
+        const etiquetas = `
+          <div class="flex">
+            <div class="flex-1 text-left text-xs text-gray-600">
+              ${labelMin}
+            </div>
+            <div class="flex-1 text-right text-xs text-gray-600">
+              ${labelMax}
+            </div>
+          </div>
+        `
+
+        return `
+          <div class="space-y-2">
+            ${etiquetas}
+            <div class="flex gap-2">${radios}</div>
+            <div class="flex gap-2">${numeros}</div>
+          </div>
+        `
+      }
 
         case "cuadricula_opciones":
         case "cuadricula_casillas": {
@@ -766,6 +769,11 @@ export function formBuilder(initialSections = [], formId = null) {
 
         escala_min: p.tipo === "escala_lineal" ? (p.escala_min ?? 1) : null,
         escala_max: p.tipo === "escala_lineal" ? (p.escala_max ?? 5) : null,
+         //  nuevos campos para etiquetas
+        etiqueta_inicial: p.tipo === "escala_lineal" ? (p.etiqueta_inicial?.trim() || "") : null,
+        etiqueta_final:   p.tipo === "escala_lineal" ? (p.etiqueta_final?.trim() || "") : null,
+
+
 
         filas: ["cuadricula_opciones", "cuadricula_casillas"].includes(p.tipo)
           ? p.filas.map((f, fi) => ({

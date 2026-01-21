@@ -94,41 +94,47 @@ class FormularioController extends Controller
     // ===============================================
     // EDITAR FORMULARIO (Constructor)
     // ===============================================
-    public function editar($id)
-{
-    $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
+   public function editar($id)
+    {
+        $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
 
-    // Mapear estructura para separar filas, columnas y celdas
-    $formulario->secciones->each(function ($seccion) {
-        $seccion->preguntas->each(function ($pregunta) {
-            if (in_array($pregunta->tipo, ['cuadricula_opciones', 'cuadricula_casillas'])) {
-                $pregunta->filas = $pregunta->opciones
-                    ->whereNotNull('fila')
-                    ->whereNull('columna')
-                    ->map(fn($o) => ['texto' => $o->texto, 'fila' => $o->fila])
-                    ->values();
+        // Mapear estructura para separar filas, columnas y celdas
+        $formulario->secciones->each(function ($seccion) {
+            $seccion->preguntas->each(function ($pregunta) {
+                if (in_array($pregunta->tipo, ['cuadricula_opciones', 'cuadricula_casillas'])) {
+                    $pregunta->filas = $pregunta->opciones
+                        ->whereNotNull('fila')
+                        ->whereNull('columna')
+                        ->map(fn($o) => ['texto' => $o->texto, 'fila' => $o->fila])
+                        ->values();
 
-                $pregunta->columnas = $pregunta->opciones
-                    ->whereNotNull('columna')
-                    ->whereNull('fila')
-                    ->map(fn($o) => ['texto' => $o->texto, 'columna' => $o->columna])
-                    ->values();
+                    $pregunta->columnas = $pregunta->opciones
+                        ->whereNotNull('columna')
+                        ->whereNull('fila')
+                        ->map(fn($o) => ['texto' => $o->texto, 'columna' => $o->columna])
+                        ->values();
 
-                $pregunta->opciones_cuadricula = $pregunta->opciones
-                    ->whereNotNull('fila')
-                    ->whereNotNull('columna')
-                    ->map(fn($o) => [
-                        'texto' => $o->texto,
-                        'fila' => $o->fila,
-                        'columna' => $o->columna
-                    ])
-                    ->values();
-            }
+                    $pregunta->opciones_cuadricula = $pregunta->opciones
+                        ->whereNotNull('fila')
+                        ->whereNotNull('columna')
+                        ->map(fn($o) => [
+                            'texto' => $o->texto,
+                            'fila' => $o->fila,
+                            'columna' => $o->columna
+                        ])
+                        ->values();
+                }
+
+                // 👇 Asegurar que escala_lineal tenga etiquetas
+                if ($pregunta->tipo === 'escala_lineal') {
+                    $pregunta->etiqueta_inicial = $pregunta->etiqueta_inicial ?? '';
+                    $pregunta->etiqueta_final   = $pregunta->etiqueta_final ?? '';
+                }
+            });
         });
-    });
 
-    return view('formularios.editar', compact('formulario'));
-}
+        return view('formularios.editar', compact('formulario'));
+    }
 
 
     // ===============================================

@@ -51,6 +51,9 @@ class EstructuraFormularioService
                        'orden'       => $ordenPregunta + 1,
                         'escala_min'  => $dataPregunta['escala_min'] ?? null,
                         'escala_max'  => $dataPregunta['escala_max'] ?? null,
+                        'etiqueta_inicial' => $dataPregunta['etiqueta_inicial'] ?? null, 
+                        'etiqueta_final'   => $dataPregunta['etiqueta_final'] ?? null,   
+
                     ]);
 
                     // ===============================
