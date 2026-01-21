@@ -30,5 +30,15 @@ class Respuesta extends Model
     {
         return $this->hasMany(RespuestaIndividual::class, 'respuesta_id');
     }
+
+    public function respuestas_individuales()
+    {
+        return $this->hasMany(RespuestaIndividual::class, 'respuesta_id');
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
 }
 
