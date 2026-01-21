@@ -1,0 +1,156 @@
+/************************************* ESTILO DEL APARTADO DE guest.blade.php ES LA BASE DE TODOS LOS AUTH*************************************/
+.navbar-custom {
+    background-color: var(--color-primario) !important;
+    height: 60px;
+}
+
+.navbar-custom .navbar-brand img {
+    max-height: 40px;
+}
+
+.brand-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    white-space: nowrap;
+}
+
+main {
+    background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('/public/assets/img/bg.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 90vh;
+    padding-top: 8rem;
+    padding-bottom: 4rem;
+}
+
+footer p {
+    font-size: 0.9rem;
+}
+
+/*************************************ESTILO DEL APARTADO DE LOGIN*************************************/
+/* Card del login */
+.login-card {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    border: 1px solid #dee2e6;
+}
+
+/* Inputs */
+.login-input {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+}
+
+/* Botón principal */
+.btn-login {
+    background-color: #0069d9;
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.6rem;
+    border: none;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-login:hover {
+    background-color: #024c9c;
+}
+
+/* Botón de Google */
+.btn-google {
+    background-color: #db4437;
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.6rem;
+    border: none;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-google:hover {
+    background-color: #ad2e1e;
+    color: white;
+}
+
+/* Texto */
+h4 {
+    font-weight: 700;
+    color: var(--color-primario);
+}
+
+/*************************************ESTILOS DEL APARTADO DE VERIFICACION DE CUENTAS*************************************/
+.verify-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem 1rem;
+    min-height: 100vh;
+    background-color: var(--color-fondo);
+}
+
+.verify-box {
+    background-color: #ffffff;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+    border-top: 6px solid var(--color-primario);
+}
+
+.icon-wrapper {
+    margin-bottom: 1rem;
+}
+
+.icon {
+    font-size: 3.5rem;
+    color: var(--color-primario);
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.1));
+}
+
+.icon-success {
+    color: #198754;
+    /* verde profesional */
+}
+
+.title {
+    font-family: var(--fuente-secundaria);
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--color-primario);
+    margin-bottom: 1rem;
+}
+
+.message {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-texto-principal);
+    margin-bottom: 1.5rem;
+}
+
+.alert-success {
+    background-color: #e6fffa;
+    border-left: 4px solid var(--color-primario);
+    color: var(--color-primario);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    font-family: var(--fuente-principal);
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.actions form {
+    margin: 0;
+}

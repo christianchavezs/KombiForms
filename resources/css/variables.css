@@ -1,0 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Catamaran:wght@700;900&display=swap');
+
+:root {
+    --color-primario: #05564f;
+    --color-secundario: #ff6a00;
+    --color-fondo: #f8f9fa;
+    --color-texto-principal: #212529;
+    --fuente-principal: 'Lato', sans-serif;
+    --fuente-secundaria: 'Catamaran', sans-serif;
+}

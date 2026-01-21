@@ -1,12 +1,15 @@
 <?php
 
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Contestar_FormularioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormularioController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstructuraFormularioController;
+use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\Usuarios;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 // ===============================
 // REDIRECCIÓN A DASHBOARD
@@ -17,6 +20,32 @@ Route::get('/', function () {
 });
 
 
+// ======================================================
+// 🔹 Autenticación con Google
+// ======================================================
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
+
+
+// ======================================================
+// 🔹 Verificación de correo
+// ======================================================
+
+// Vista donde se avisa que debe verificar
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+// Link del correo
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect()->route('dashboard');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+// Reenviar correo de verificación
+Route::post('/email/verification-notification', [VerifyEmailController::class, 'resend'])
+    ->middleware(['auth', 'throttle:6,1'])
+    ->name('verification.send');
 
 // ===============================
 // DASHBOARD

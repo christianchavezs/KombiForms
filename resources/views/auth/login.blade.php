@@ -1,47 +1,72 @@
 <x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <div class="login-card p-4 shadow">
+        <h4 class="text-center mb-4">Iniciar sesión</h4>
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+        {{-- Mensajes de error --}}
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                @foreach ($errors->all() as $error)
+                    <p class="mb-0">{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+            <!-- Email -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Usuario</label>
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-person-fill"></i>
+                    </span>
+                    <input id="email" type="text" class="form-control login-input"
+                        name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
+                </div>
+            </div>
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+            <!-- Password -->
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-lock-fill"></i>
+                    </span>
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+                    <input id="password" type="password" class="form-control login-input"
+                        name="password" required autocomplete="current-password">
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
+                    <button type="button" class="btn btn-outline-secondary"
+                        id="toggle-password" tabindex="-1"
+                        onclick="togglePassword('password','icono')">
+                        <i class="bi bi-eye-fill" id="icono"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Remember Me -->
+            <div class="form-check mb-3">
+                <input id="remember_me" type="checkbox" class="form-check-input" name="remember">
+                <label for="remember_me" class="form-check-label">Recordarme</label>
+            </div>
+
+
+            <!-- Botón login -->
+            <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-login">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión
+                </button>
+            </div>
+        </form>
+
+        <hr>
+
+        <!-- Login Google -->
+        <a href="{{ route('google.login') }}" class="btn btn-google w-100">
+            <i class="bi bi-google me-2"></i> Iniciar sesión con Google
+        </a>
+    </div>
 </x-guest-layout>
