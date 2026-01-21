@@ -76,7 +76,7 @@
                             @foreach ($seccion->preguntas as $pregunta)
                                 @php
                                     // Buscar respuesta individual de esta persona para esta pregunta
-                                    $ri = $respuesta->respuestas_individuales
+                                    $ri = $respuesta->respuestasIndividuales
                                         ->where('pregunta_id', $pregunta->id);
                                     $valor = $ri->map(function($r){
                                         return $r->texto ?? $r->opcion->texto ?? 'Sin respuesta';
@@ -169,7 +169,7 @@
                             @foreach ($seccion->preguntas as $pregunta)
                                 @php
                                     // Buscar respuesta individual de esta persona para esta pregunta
-                                    $ri = $respuesta->respuestas_individuales
+                                    $ri = $respuesta->respuestasIndividuales
                                         ->where('pregunta_id', $pregunta->id);
                                     $valor = $ri->map(function($r){
                                         return $r->texto ?? $r->opcion->texto ?? 'Sin respuesta';
