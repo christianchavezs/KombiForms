@@ -5,6 +5,18 @@
 @section('content')
 <div class="p-6">
 
+    {{-- ALERTA --}}
+    @if(session('success'))
+        <div class="alert alert-success empresa-alerta">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-success empresa-alerta">
+            {{ session('error') }}
+        </div>
+    @endif
+
     {{-- Tarjetas superiores --}}
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
 
@@ -87,7 +99,7 @@
                         {{ $respuesta->formulario->titulo }}
                     </p>
                     <p class="text-gray-500 text-sm">
-                        Recibida: {{ $respuesta->enviado_en->format('d/m/Y H:i') }}
+                        Recibida: {{ \Carbon\Carbon::parse($respuesta->enviado_en)->format('d/m/Y H:i') }}
                     </p>
                 </li>
                 @empty

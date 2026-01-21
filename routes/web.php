@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Contestar_FormularioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormularioController;
@@ -96,8 +97,6 @@ Route::middleware('auth')->group(function () {
     })->name('loginAnonimo');
 
 
-    
-
 
     // Mostrar la vista con el concentrado
     Route::get('/formularios/{id}/concentrado', [FormularioController::class, 'mostrarConcentrado'])
@@ -106,6 +105,9 @@ Route::middleware('auth')->group(function () {
     // Descargar el Excel desde la vista
     Route::get('/formularios/{id}/concentrado/export', [FormularioController::class, 'concentrarRespuestas'])
         ->name('formularios.concentrarRespuestas');
+
+    Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar']);
+    Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder']);
 
 });
 
