@@ -9,6 +9,15 @@ use App\Models\Seccion;
 use App\Models\Pregunta;
 use App\Models\Opcion;
 
+
+
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+
+
 use App\Services\EstructuraFormularioService;
 
 
@@ -191,6 +200,185 @@ class FormularioController extends Controller
 
         return view('formularios.responder', compact('formulario'));
     }
+
+
+
+    public function mostrarConcentrado($id)
+    {
+        $formulario = Formulario::with(['secciones.preguntas.opciones', 'respuestas'])->findOrFail($id);
+
+        // Contadores por opción
+        $estadisticas = [];
+        foreach ($formulario->secciones as $seccion) {
+            foreach ($seccion->preguntas as $pregunta) {
+                $estadisticas[$pregunta->id] = $pregunta->opciones->map(function ($opcion) use ($pregunta) {
+                    $conteo = DB::table('respuestas_individuales')
+                        ->where('pregunta_id', $pregunta->id)
+                        ->where('opcion_id', $opcion->id)
+                        ->count();
+
+                    return [
+                        'opcion' => $opcion->texto,
+                        'conteo' => $conteo,
+                    ];
+                });
+            }
+        }
+
+        return view('formularios.concentradoRespuestas', compact('formulario', 'estadisticas'));
+}
+
+public function concentrarRespuestas($id)
+{
+    $formulario = Formulario::with([
+        'secciones.preguntas.opciones',
+        'respuestas.usuario',
+        'respuestas.respuestas_individuales.pregunta',
+        'respuestas.respuestas_individuales.opcion'
+    ])->findOrFail($id);
+
+    // Contadores por opción
+    $estadisticas = [];
+    foreach ($formulario->secciones as $seccion) {
+        foreach ($seccion->preguntas as $pregunta) {
+            $estadisticas[$pregunta->id] = $pregunta->opciones->map(function ($opcion) use ($pregunta) {
+                $conteo = DB::table('respuestas_individuales')
+                    ->where('pregunta_id', $pregunta->id)
+                    ->where('opcion_id', $opcion->id)
+                    ->count();
+
+                return [
+                    'opcion' => $opcion->texto,
+                    'conteo' => $conteo,
+                ];
+            });
+        }
+    }
+
+    // Crear Excel
+    $spreadsheet = new Spreadsheet();
+
+    // Hoja 1: Respuestas por persona (una fila = una persona)
+    $sheet1 = $spreadsheet->getActiveSheet();
+    $sheet1->setTitle('Respuestas');
+
+    // Encabezados fijos
+    $sheet1->setCellValue('A1', 'ID');
+    $sheet1->setCellValue('B1', 'Usuario');
+    $sheet1->setCellValue('C1', 'Correo');
+    $sheet1->setCellValue('D1', 'Departamento');
+    $sheet1->setCellValue('E1', 'Fecha');
+
+    // Encabezados dinámicos: cada pregunta es una columna
+    $col = 'F';
+    $preguntasMap = []; // Mapear pregunta_id a columna
+    foreach ($formulario->secciones as $seccion) {
+        foreach ($seccion->preguntas as $pregunta) {
+            $sheet1->setCellValue("{$col}1", $pregunta->texto);
+            $preguntasMap[$pregunta->id] = $col;
+            $col++;
+        }
+    }
+
+    // Llenar filas: cada persona = una fila
+    $row = 2;
+    $contadorAnonimo = 1;
+    foreach ($formulario->respuestas as $respuesta) {
+        // Usuario o Persona genérica
+        if ($formulario->permitir_anonimo) {
+            $usuario = 'Persona ' . $contadorAnonimo++;
+            $correo = 'N/A';
+            $departamento = 'N/A';
+        } else {
+            $usuario = $respuesta->usuario->name ?? 'Sin nombre';
+            $correo = $respuesta->usuario->email ?? 'N/A';
+            $departamento = $respuesta->usuario->departamento ?? 'N/A';
+        }
+
+        // Datos fijos
+        $sheet1->setCellValue("A{$row}", $respuesta->id);
+        $sheet1->setCellValue("B{$row}", $usuario);
+        $sheet1->setCellValue("C{$row}", $correo);
+        $sheet1->setCellValue("D{$row}", $departamento);
+        $sheet1->setCellValue("E{$row}", $respuesta->created_at);
+
+        // Respuestas por pregunta
+        foreach ($respuesta->respuestas_individuales as $ri) {
+            $col = $preguntasMap[$ri->pregunta->id] ?? null;
+            if ($col) {
+                $valor = $ri->texto ?? $ri->opcion->texto ?? 'Sin respuesta';
+
+                // Si ya hay algo en la celda (casillas múltiples, cuadrículas), concatenar
+                $celdaActual = $sheet1->getCell("{$col}{$row}")->getValue();
+                if (!empty($celdaActual)) {
+                    $valor = $celdaActual . '; ' . $valor;
+                }
+
+                $sheet1->setCellValue("{$col}{$row}", $valor);
+            }
+        }
+
+        $row++;
+    }
+
+    // Estilos encabezados hoja 1
+    $lastCol = chr(ord('E') + count($preguntasMap));
+    $sheet1->getStyle("A1:{$lastCol}1")->applyFromArray([
+        'font' => ['bold' => true],
+        'fill' => [
+            'fillType' => Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'DDDDDD']
+        ],
+        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+    ]);
+    foreach (range('A', $lastCol) as $col) {
+        $sheet1->getColumnDimension($col)->setAutoSize(true);
+    }
+
+    // Hoja 2: Estadísticas (igual que ya tienes)
+    $sheet2 = $spreadsheet->createSheet();
+    $sheet2->setTitle('Estadísticas');
+    $sheet2->setCellValue('A1', 'Pregunta');
+    $sheet2->setCellValue('B1', 'Opción');
+    $sheet2->setCellValue('C1', 'Conteo');
+
+    $row = 2;
+    foreach ($formulario->secciones as $seccion) {
+        foreach ($seccion->preguntas as $pregunta) {
+            foreach ($estadisticas[$pregunta->id] as $dato) {
+                $sheet2->setCellValue("A{$row}", $pregunta->texto);
+                $sheet2->setCellValue("B{$row}", $dato['opcion']);
+                $sheet2->setCellValue("C{$row}", $dato['conteo']);
+                $row++;
+            }
+        }
+    }
+
+    // Estilos encabezados hoja 2
+    $sheet2->getStyle('A1:C1')->applyFromArray([
+        'font' => ['bold' => true],
+        'fill' => [
+            'fillType' => Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'DDDDDD']
+        ],
+        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+    ]);
+    foreach (range('A', 'C') as $col) {
+        $sheet2->getColumnDimension($col)->setAutoSize(true);
+    }
+
+    // Descargar Excel
+    $writer = new Xlsx($spreadsheet);
+    $filename = 'concentrado_respuestas.xlsx';
+
+    return response()->streamDownload(function() use ($writer) {
+        $writer->save('php://output');
+    }, $filename);
+}
+
+
+
+
 
 
 }

@@ -63,9 +63,6 @@ Route::middleware('auth')->group(function () {
 
 
 
-    
-  
-
         // Secciones y preguntas AJAX
     Route::post('/formularios/{formulario}/secciones', [FormularioController::class, 'storeSeccion'])->name('formularios.secciones.store');
     Route::delete('/formularios/secciones/{seccion}', [FormularioController::class, 'destroySeccion'])->name('formularios.secciones.destroy');
@@ -97,6 +94,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/loginAnonimo', function () {
         return view('formularios.loginAnonimo');
     })->name('loginAnonimo');
+
+
+    
+
+
+    // Mostrar la vista con el concentrado
+    Route::get('/formularios/{id}/concentrado', [FormularioController::class, 'mostrarConcentrado'])
+        ->name('formularios.concentrado');
+
+    // Descargar el Excel desde la vista
+    Route::get('/formularios/{id}/concentrado/export', [FormularioController::class, 'concentrarRespuestas'])
+        ->name('formularios.concentrarRespuestas');
 
 });
 

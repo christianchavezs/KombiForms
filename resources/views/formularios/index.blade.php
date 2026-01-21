@@ -66,13 +66,20 @@
                            class="text-blue-600 hover:underline text-sm">
                            Editar
                         </a>
-                        <a href="#" class="text-indigo-600 hover:underline text-sm">Ver enlaces</a>
+                       
                         <a href="#"
                             onclick="copiarEnlace('{{ route('formularios.acceder', $form->token) }}')"
                             class="text-indigo-600 hover:underline text-sm">
                             Ver enlace
-                            </a>
-                        <a href="#" class="text-green-600 hover:underline text-sm">Respuestas</a>
+                        </a>
+
+
+                        <a href="{{ route('formularios.concentrado', $form->id) }}" 
+                            class="text-green-600 hover:underline text-sm">
+                                Respuestas
+                        </a>
+                        
+                          
 
                         <form action="#" method="POST" class="inline-block">
                             @csrf
