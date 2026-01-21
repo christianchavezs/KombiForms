@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Auth;
 
 class Contestar_FormularioController extends Controller
 {
+    public function gracias()
+    {
+        if (Auth::check()) {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
+        return view('gracias');
+    }
+
     public function mostrar(Formulario $formulario)
     {
         $formulario->load('secciones.preguntas.opciones');
@@ -102,8 +112,10 @@ class Contestar_FormularioController extends Controller
             }
         });
 
-        return redirect()->route('dashboard')->with('success', 'Formulario enviado correctamente');
+        return redirect()->route('gracias');
     }
+
+
 
 
 }

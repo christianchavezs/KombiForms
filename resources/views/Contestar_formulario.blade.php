@@ -35,7 +35,7 @@
                         @elseif($pregunta->tipo === 'opcion_multiple')
                             @foreach($pregunta->opciones as $opcion)
                                 <div class="empresa-option">
-                                    <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $opcion->id }}" {{ $pregunta->obligatorio ? 'required' : '' }}>
+                                    <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $opcion->id }}">
                                     <span>{{ $opcion->texto }}</span>
                                 </div>
                             @endforeach
@@ -45,7 +45,7 @@
                             <div class="empresa-scale">
                                 @for($i = $pregunta->escala_min; $i <= $pregunta->escala_max; $i++)
                                     <label class="empresa-scale-option">
-                                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $i }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
+                                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $i }}" >
                                         <span>{{ $i }}</span>
                                     </label>
                                 @endfor
@@ -72,7 +72,7 @@
 
                                             @foreach($pregunta->columnas as $columna)
                                                 <td class="empresa-grid-cell">
-                                                    <input type="checkbox" name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}][]" value="{{ $columna->id }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
+                                                    <input type="checkbox" name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}][]" value="{{ $columna->id }}"  >
                                                 </td>
                                             @endforeach
                                         </tr>
@@ -82,13 +82,13 @@
 
                         {{-- PÁRRAFO --}}
                         @elseif($pregunta->tipo === 'parrafo')
-                            <textarea name="respuestas[{{ $pregunta->id }}]" class="empresa-textarea" ></textarea>
+                            <textarea name="respuestas[{{ $pregunta->id }}]" class="empresa-textarea" {{ $pregunta->obligatorio ? 'required' : '' }}></textarea>
 
                         {{-- LISTA DE CASILLAS --}}
                         @elseif($pregunta->tipo === 'casillas')
                             @foreach($pregunta->opciones as $opcion)
                                 <div class="empresa-option">
-                                    <input type="checkbox" name="respuestas[{{ $pregunta->id }}][]" value="{{ $opcion->id }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
+                                    <input type="checkbox" name="respuestas[{{ $pregunta->id }}][]" value="{{ $opcion->id }}" >
                                     <span>{{ $opcion->texto }}</span>
                                 </div>
                             @endforeach
@@ -114,7 +114,7 @@
 
                                             @foreach($pregunta->columnas as $columna)
                                                 <td class="empresa-grid-cell">
-                                                    <input type="radio" name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}]" value="{{ $columna->id }}" {{ $pregunta->obligatorio ? 'required' : '' }} >
+                                                    <input type="radio" name="respuestas[{{ $pregunta->id }}][{{ $fila->id }}]" value="{{ $columna->id }}"  >
                                                 </td>
                                             @endforeach
                                         </tr>

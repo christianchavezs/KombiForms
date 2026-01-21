@@ -41,13 +41,13 @@ class GoogleAuthController extends Controller
                 $user = User::create([
                     'name'  => $nombreCompleto,
                     'email' => $email,
-                    'rol'   => 4,
+                    'rol'   => 'usuario',
                     'active' => true,
                 ]);
             }
 
             // Si el usuario está inactivo → bloquear acceso
-            if (!$user->active) {
+            if ($user->active) {
                 return redirect('/login')->with('error', 'Cuenta inactiva. Contacta al administrador.');
             }
 
@@ -56,7 +56,7 @@ class GoogleAuthController extends Controller
             $user = User::create([
                 'name'  => $nombreCompleto,
                 'email' => $email,
-                'rol'   => 4,
+                'rol'   => 'usuario',
                 'active' => true,
             ]);
         }
@@ -70,7 +70,7 @@ class GoogleAuthController extends Controller
             return redirect()->route('verification.notice');
         }
 
-        return redirect()->route('dashboard');
+        return redirect()->intended(route('dashboard'));
     }
 
 }

@@ -187,8 +187,11 @@ class FormularioController extends Controller
             return view('formularios.loginAnonimo', compact('formulario'));
         }
 
+        // Guardamos a dónde debe volver después del login
+        session(['url.intended' => route('mostrar', $formulario)]);
+
         // Si requiere usuario registrado → redirigir al login normal
-        return redirect()->route('login')->with('redirect_formulario', $formulario->id);
+        return redirect()->route('login');
     }
 
     // ===============================================

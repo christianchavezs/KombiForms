@@ -25,6 +25,7 @@ Route::get('/', function () {
 // ======================================================
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.login');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
+Route::get('/formularios/gracias', [Contestar_FormularioController::class, 'gracias'])->name('gracias');
 
 
 // ======================================================
@@ -140,7 +141,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar']) ->name('mostrar');
     Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder']);
-
 });
 
 
