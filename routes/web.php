@@ -54,6 +54,9 @@ Route::post('/email/verification-notification', [VerifyEmailController::class, '
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('dashboard');
+
+
+    //Aqui es
 Route::get('/formulario_anonimo/{formulario}', [Contestar_FormularioController::class, 'mostrar']) ->name('mostrar_anonimos');
 
 // ===============================

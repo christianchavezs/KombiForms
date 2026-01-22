@@ -40,16 +40,31 @@
                                 </div>
                             @endforeach
                         
+
                         {{-- ESCALA LINEAL --}}
                         @elseif($pregunta->tipo === 'escala_lineal')
-                            <div class="empresa-scale">
-                                @for($i = $pregunta->escala_min; $i <= $pregunta->escala_max; $i++)
-                                    <label class="empresa-scale-option">
-                                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $i }}" >
-                                        <span>{{ $i }}</span>
-                                    </label>
-                                @endfor
+                            <div class="empresa-scale space-y-2">
+
+                                {{-- Fila de etiquetas (arriba, separadas y más grandes) --}}
+                                <div class="flex justify-between w-full mb-2">
+                                    <div class="text-base font-semibold text-gray-700">{{ $pregunta->etiqueta_inicial }}</div>
+                                    <div class="text-base font-semibold text-gray-700">{{ $pregunta->etiqueta_final }}</div>
+                                </div>
+
+                                {{-- Fila de radios con números (abajo) --}}
+                                <div class="flex gap-2 w-full">
+                                    @for($i = $pregunta->escala_min; $i <= $pregunta->escala_max; $i++)
+                                        <label class="empresa-scale-option flex-1 text-center">
+                                            <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $i }}">
+                                            <span>{{ $i }}</span>
+                                        </label>
+                                    @endfor
+                                </div>
                             </div>
+
+
+
+
 
                         {{-- CASILLA MÚLTIPLE --}}
                         @elseif($pregunta->tipo === 'cuadricula_casillas') 
