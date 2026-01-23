@@ -21,6 +21,11 @@
                     <x-nav-link :href="route('formularios.index')" :active="request()->routeIs('formularios.index')" class="text-white hover:text-yellow-300">
                         {{ __('Formularios') }}
                     </x-nav-link>
+
+                    {{-- Usuarios --}}
+                    <x-nav-link :href="route('Usuarios')" :active="request()->routeIs('Usuarios')" class="text-white hover:text-yellow-300">
+                        {{ __('Usuarios') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -78,6 +83,11 @@
             {{-- Crear Formulario --}}
             <x-responsive-nav-link :href="route('formularios.crear')" :active="request()->routeIs('formularios.crear')" class="text-white hover:text-yellow-300">
                 {{ __('Crear Formulario') }}
+            </x-responsive-nav-link>
+
+            {{-- Usuarios --}}
+            <x-responsive-nav-link :href="route('Usuarios')" :active="request()->routeIs('Usuarios')" class="text-white hover:text-yellow-300">
+                {{ __('Usuarios') }}
             </x-responsive-nav-link>
         </div>
 
