@@ -58,6 +58,67 @@
     </div>
 </div>
 
+<script>
+document.querySelectorAll('.toggle-estado-usuarios').forEach(toggle => {
+    toggle.addEventListener('change', function(e) {
+        const userId = this.dataset.id;
+        const url = this.dataset.url;
+        const nuevoEstado = this.checked ? 1 : 0;
+
+        const mensaje = nuevoEstado 
+            ? "¿Estás seguro que deseas activar este usuario?" 
+            : "¿Estás seguro que deseas desactivar este usuario?";
+
+        Swal.fire({
+            title: 'Confirmar acción',
+            text: mensaje,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#dc3545',
+            confirmButtonText: 'Sí, confirmar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(url, {
+                    method: 'PATCH',   // 👈 coincide con tu ruta
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ activo: nuevoEstado })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success){
+                        const badge = document.getElementById(`badge-${userId}`);
+                        if(nuevoEstado){
+                            badge.classList.remove('inactivo');
+                            badge.classList.add('activo');
+                            badge.innerHTML = '<i class="bi bi-check-circle me-1"></i> Activo';
+                        } else {
+                            badge.classList.remove('activo');
+                            badge.classList.add('inactivo');
+                            badge.innerHTML = '<i class="bi bi-x-circle me-1"></i> Inactivo';
+                        }
+                        Swal.fire('¡Actualizado!', 'El estado del usuario ha sido cambiado.', 'success');
+                    } else {
+                        Swal.fire('Error', 'No se pudo actualizar el estado.', 'error');
+                        this.checked = !this.checked;
+                    }
+                })
+                .catch(() => {
+                    Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+                    this.checked = !this.checked;
+                });
+            } else {
+                this.checked = !this.checked;
+            }
+        });
+    });
+});
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>

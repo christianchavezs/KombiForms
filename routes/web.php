@@ -144,6 +144,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar']) ->name('mostrar');
     Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder']);
+
+
+
+    Route::patch('/usuarios/{user}/toggle', [Usuarios::class, 'toggleActivo'])->name('usuarios.toggle');
 });
 
 

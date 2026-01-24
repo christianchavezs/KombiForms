@@ -38,14 +38,16 @@ class Usuarios extends Controller
     }
 
 
-    public function toggleActivo(User $user)
-    {
-        $user->activo = ! $user->activo;
-        $user->save();
+    
+    public function toggleActivo(Request $request, User $user)
+{
+    // Usar el valor que viene del request
+    $user->activo = $request->activo;
+    $user->save();
 
-        return response()->json([
-            'success' => true,
-            'activo' => $user->activo
-        ]);
-    }
+    return response()->json([
+        'success' => true,
+        'activo' => $user->activo
+    ]);
+}
 }

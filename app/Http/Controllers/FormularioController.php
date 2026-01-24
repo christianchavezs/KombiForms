@@ -9,18 +9,12 @@ use App\Models\Seccion;
 use App\Models\Pregunta;
 use App\Models\Opcion;
 
-
-
-
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-
 use App\Services\EstructuraFormularioService;
-
-
 
 class FormularioController extends Controller
 {
@@ -50,8 +44,6 @@ class FormularioController extends Controller
 
         return view('formularios.index', compact('formularios'));
     }
-
-
 
     // ===============================================
     // CREAR FORMULARIO
