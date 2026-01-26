@@ -48,9 +48,12 @@ class FormularioController extends Controller
     // ===============================================
     // CREAR FORMULARIO
     // ===============================================
-    public function crear()
+    public function crear(Request $request)
     {
-        return view('formularios.crear');
+        // Si no viene el parámetro, por defecto regresa a la lista de formularios
+        $from = $request->query('from', 'index');
+
+        return view('formularios.crear', compact('from'));
     }
 
 
@@ -132,17 +135,28 @@ class FormularioController extends Controller
     // ===============================================
     // CONFIGURACIÓN DEL FORMULARIO
     // ===============================================
-    public function configuracion($id)
+   /* public function configuracion($id)
     {
         $formulario = Formulario::findOrFail($id);
         return view('formularios.configuracion', compact('formulario'));
+    }*/
+
+    // ===============================================
+    // CONFIGURACIÓN DEL FORMULARIO
+    // ===============================================
+    public function configuracion(Request $request, $id)
+    {
+        $formulario = Formulario::findOrFail($id);
+        $from = $request->query('from', 'index'); // por defecto lista de formularios
+
+        return view('formularios.configuracion', compact('formulario', 'from'));
     }
 
 
     // ===============================================
     // ACTUALIZAR FORMULARIO
     // ===============================================
-    public function actualizar(Request $request, $id)
+    /*public function actualizar(Request $request, $id)
     {
         $formulario = Formulario::findOrFail($id);
 
@@ -158,7 +172,37 @@ class FormularioController extends Controller
 
         return redirect()->route('formularios.editar', $id)
             ->with('success', 'Cambios guardados correctamente.');
+    }*/
+    public function actualizar(Request $request, $id)
+    {
+        $formulario = Formulario::findOrFail($id);
+
+        // Convertir el valor del select en booleanos
+        $config = $request->input('config_respuesta');
+        $permitirAnonimo = $config === 'anonimo';
+        $requiereCorreo = $config === 'correo';
+
+        $formulario->update([
+            'titulo' => $request->input('titulo', $formulario->titulo),
+            'descripcion' => $request->input('descripcion', $formulario->descripcion),
+            'permitir_anonimo' => $permitirAnonimo,
+            'requiere_correo' => $requiereCorreo,
+            'una_respuesta' => $request->boolean('una_respuesta'),
+            'fecha_inicio' => $request->input('fecha_inicio'),
+            'fecha_fin' => $request->input('fecha_fin'),
+        ]);
+
+        // Redirigir según origen
+        $from = $request->input('from');
+        if ($from === 'editar') {
+            return redirect()->route('formularios.editar', $id)
+                ->with('success', 'Cambios guardados correctamente.');
+        }
+
+        return redirect()->route('formularios.index')
+            ->with('success', 'Cambios guardados correctamente.');
     }
+
 
     // ===============================================
     // ELIMINAR FORMULARIO

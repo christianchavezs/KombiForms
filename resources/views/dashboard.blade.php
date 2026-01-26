@@ -19,6 +19,27 @@
         </div>
     @endif
 
+
+    
+    {{-- Encabezado y botón --}}
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-[#025742] drop-shadow">
+            📊 Dashboard
+        </h1>
+
+        {{-- Botón Crear Nuevo Formulario --}}
+        <a href="{{ route('formularios.crear', ['from' => 'dashboard']) }}"
+            class="inline-flex items-center gap-2 bg-[#025742] hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition-all duration-200 transform hover:scale-105">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 4v16m8-8H4"/>
+            </svg>
+            Nuevo Formulario
+        </a>
+    </div>
+
+    
+
     {{-- Tarjetas superiores --}}
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="card-stat">

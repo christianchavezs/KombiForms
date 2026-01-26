@@ -39,6 +39,9 @@
             @csrf
             @method('PUT')
 
+            {{-- Campo oculto para origen --}}
+            <input type="hidden" name="from" value="{{ $from }}">
+
             {{-- Título --}}
             <div class="mb-10">
                 <label class="block text-gray-700 font-semibold mb-3 text-3xl">Título del formulario *</label>
@@ -141,12 +144,17 @@
                 </div>
             </div>
 
-            {{-- Botón --}}
-            <div class="mt-12">
+            {{-- Botones Guardar y Cancelar --}}
+            <div class="mt-12 flex gap-4">
                 <button type="submit"
                     class="bg-[#025742] hover:bg-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition transform hover:scale-105 text-lg">
                     Guardar cambios
                 </button>
+
+                <a href="{{ $backRoute }}"
+                class="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition transform hover:scale-105 text-lg inline-flex items-center gap-2">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
             </div>
 
         </form>

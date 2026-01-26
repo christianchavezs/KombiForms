@@ -5,6 +5,26 @@
 @section('content')
 <div class="max-w-4xl mx-auto mt-20 text-[1.05rem]">
 
+    {{-- Botón Regresar dinámico --}}
+    <div class="mt-6 mb-6">
+        @php
+            if ($from === 'dashboard') {
+                $backRoute = route('dashboard');
+            } else {
+                $backRoute = route('formularios.index');
+            }
+        @endphp
+
+        <a href="{{ $backRoute }}"
+        class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 19l-7-7 7-7" />
+            </svg>
+            Regresar
+        </a>
+    </div>
+
     <!-- Encabezado -->
     <div class="flex items-center gap-3 mb-10">
         <div class="w-14 h-14 flex items-center justify-center bg-[#025742] text-white rounded-xl shadow">
@@ -127,9 +147,9 @@
                     <i class="bi bi-check-circle me-2"></i> Guardar formulario
                 </button>
 
-                <a href="{{ route('formularios.index') }}"
-                   class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-8 py-4 rounded-xl shadow-lg transition transform hover:scale-105 text-lg">
-                   <i class="bi bi-x-circle me-2"></i> Cancelar
+                <a href="{{ $backRoute }}"
+                    class="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition transform hover:scale-105 text-lg inline-flex items-center gap-2">
+                    <i class="bi bi-x-circle"></i> Cancelar
                 </a>
             </div>
 
