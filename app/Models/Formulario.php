@@ -21,7 +21,8 @@ class Formulario extends Model
         'una_respuesta',
         'fecha_inicio',
         'fecha_fin',
-        'token', // importante incluirlo
+        'token',
+        'activo', // 👈 faltaba aquí
     ];
 
     protected $dates = [
@@ -31,12 +32,9 @@ class Formulario extends Model
         'actualizado_en'
     ];
 
-    // >>> ¡IMPORTANTE! <<<
-    // Usar los nombres REALES de tu base de datos
     const CREATED_AT = 'creado_en';
     const UPDATED_AT = 'actualizado_en';
 
-    // Generar token automáticamente al crear un formulario
     protected static function boot()
     {
         parent::boot();
@@ -57,7 +55,4 @@ class Formulario extends Model
     {
         return $this->hasMany(Seccion::class, 'formulario_id')->orderBy('orden');
     }
-
-
-
 }

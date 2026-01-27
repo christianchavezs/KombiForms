@@ -173,35 +173,40 @@ class FormularioController extends Controller
         return redirect()->route('formularios.editar', $id)
             ->with('success', 'Cambios guardados correctamente.');
     }*/
-    public function actualizar(Request $request, $id)
-    {
-        $formulario = Formulario::findOrFail($id);
+   public function actualizar(Request $request, $id)
+{
+    // Ver todo lo que llega del formulario
+    //dd($request->all());
 
-        // Convertir el valor del select en booleanos
-        $config = $request->input('config_respuesta');
-        $permitirAnonimo = $config === 'anonimo';
-        $requiereCorreo = $config === 'correo';
+    $formulario = Formulario::findOrFail($id);
 
-        $formulario->update([
-            'titulo' => $request->input('titulo', $formulario->titulo),
-            'descripcion' => $request->input('descripcion', $formulario->descripcion),
-            'permitir_anonimo' => $permitirAnonimo,
-            'requiere_correo' => $requiereCorreo,
-            'una_respuesta' => $request->boolean('una_respuesta'),
-            'fecha_inicio' => $request->input('fecha_inicio'),
-            'fecha_fin' => $request->input('fecha_fin'),
-        ]);
+    // Convertir el valor del select en booleanos
+    $config = $request->input('config_respuesta');
+    $permitirAnonimo = $config === 'anonimo';
+    $requiereCorreo = $config === 'correo';
 
-        // Redirigir según origen
-        $from = $request->input('from');
-        if ($from === 'editar') {
-            return redirect()->route('formularios.editar', $id)
-                ->with('success', 'Cambios guardados correctamente.');
-        }
+    $formulario->update([
+        'titulo' => $request->input('titulo', $formulario->titulo),
+        'descripcion' => $request->input('descripcion', $formulario->descripcion),
+        'permitir_anonimo' => $permitirAnonimo,
+        'requiere_correo' => $requiereCorreo,
+        'una_respuesta' => $request->boolean('una_respuesta'),
+        'fecha_inicio' => $request->input('fecha_inicio'),
+        'fecha_fin' => $request->input('fecha_fin'),
+        // Guardar como entero 0/1 para alinearse con tinyint(1)
+        'activo' => (int) $request->input('activo', 0),
+    ]);
 
-        return redirect()->route('formularios.index')
+    // Redirigir según origen
+    $from = $request->input('from');
+    if ($from === 'editar') {
+        return redirect()->route('formularios.editar', $id)
             ->with('success', 'Cambios guardados correctamente.');
     }
+
+    return redirect()->route('formularios.index')
+        ->with('success', 'Cambios guardados correctamente.');
+}
 
 
     // ===============================================
