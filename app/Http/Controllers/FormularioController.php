@@ -173,28 +173,58 @@ class FormularioController extends Controller
         return redirect()->route('formularios.editar', $id)
             ->with('success', 'Cambios guardados correctamente.');
     }*/
-   public function actualizar(Request $request, $id)
+public function actualizar(Request $request, $id)
 {
-    // Ver todo lo que llega del formulario
-    //dd($request->all());
-
     $formulario = Formulario::findOrFail($id);
 
-    // Convertir el valor del select en booleanos
+    // Validaciones de fechas
+    $request->validate([
+    'titulo' => 'required|string|max:255',
+    'config_respuesta' => 'required|in:anonimo,correo',
+    'fecha_inicio' => 'nullable|date|after_or_equal:now',
+    'fecha_fin'    => 'nullable|date|after:fecha_inicio|after_or_equal:now',
+], [
+    'fecha_inicio.after_or_equal' => 'La fecha de inicio no puede ser anterior al momento actual.',
+    'fecha_fin.after'             => 'La fecha de cierre debe ser mayor que la fecha de inicio.',
+    'fecha_fin.after_or_equal'    => 'La fecha de cierre no puede ser pasada.',
+]);
+
     $config = $request->input('config_respuesta');
     $permitirAnonimo = $config === 'anonimo';
     $requiereCorreo = $config === 'correo';
 
+    // Valores iniciales
+    $activo = (int) $request->input('activo', 0);
+    $fechaInicio = $request->input('fecha_inicio') ?: null;
+    $fechaFin = $request->input('fecha_fin') ?: null;
+
+    // Lógica de integridad
+    if ($fechaFin) {
+        if (now()->greaterThanOrEqualTo($fechaFin)) {
+            // Si la fecha/hora de cierre ya pasó
+            if ($activo === 1) {
+                // Usuario lo activó manualmente después de vencido → limpiar fecha_fin
+                $fechaFin = null;
+            } else {
+                // Forzar inactivo
+                $activo = 0;
+            }
+        } else {
+            // Fecha de cierre válida y futura → activar automáticamente
+            $activo = 1;
+        }
+    }
+
+    // Actualizar en BD
     $formulario->update([
         'titulo' => $request->input('titulo', $formulario->titulo),
         'descripcion' => $request->input('descripcion', $formulario->descripcion),
         'permitir_anonimo' => $permitirAnonimo,
         'requiere_correo' => $requiereCorreo,
         'una_respuesta' => $request->boolean('una_respuesta'),
-        'fecha_inicio' => $request->input('fecha_inicio'),
-        'fecha_fin' => $request->input('fecha_fin'),
-        // Guardar como entero 0/1 para alinearse con tinyint(1)
-        'activo' => (int) $request->input('activo', 0),
+        'fecha_inicio' => $fechaInicio,
+        'fecha_fin' => $fechaFin,
+        'activo' => $activo,
     ]);
 
     // Redirigir según origen
@@ -207,7 +237,6 @@ class FormularioController extends Controller
     return redirect()->route('formularios.index')
         ->with('success', 'Cambios guardados correctamente.');
 }
-
 
     // ===============================================
     // ELIMINAR FORMULARIO

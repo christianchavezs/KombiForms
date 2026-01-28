@@ -31,12 +31,12 @@
     <div class="bg-white rounded-2xl shadow-xl p-10 border border-gray-100">
 
         <form action="{{ route('formularios.actualizar', $formulario->id) }}" method="POST"
-              x-data="{  
-                        opcion: '{{ $formulario->permitir_anonimo ? 'anonimo' : ($formulario->requiere_correo ? 'correo' : '') }}',  
-                        titulo: '{{ old('titulo', $formulario->titulo) }}',  
-                        activo: {{ (int) $formulario->activo }},  
-                        mostrarModal: false  
-                    }"
+              x-data="{
+    opcion: '{{ $formulario->permitir_anonimo ? 'anonimo' : ($formulario->requiere_correo ? 'correo' : '') }}',
+    titulo: '{{ old('titulo', $formulario->titulo) }}',
+    activo: {{ (int) $formulario->activo }},
+    mostrarModal: false
+}"
 
 
               @submit.prevent="if(opcion === ''){ alert('Debes seleccionar una configuraci贸n de respuestas'); } else { $el.submit() }">
@@ -95,29 +95,44 @@
             </label>
 
             {{-- Fechas --}}
-            <h2 class="text-2xl font-semibold text-gray-800 mt-12 mb-5 flex items-center gap-2">
-                <i class="bi bi-calendar-event text-[#025742]"></i> Fechas
-            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div>
+        <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de inicio</label>
+        <input type="datetime-local" name="fecha_inicio"
+               value="{{ old('fecha_inicio', $formulario->fecha_inicio) }}"
+               min="{{ now()->format('Y-m-d\TH:i') }}"
+               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
+        @error('fecha_inicio')
+            <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+        @enderror
+    </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de inicio</label>
-                    <input type="datetime-local" name="fecha_inicio"
-                           value="{{ old('fecha_inicio', $formulario->fecha_inicio) }}"
-                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
-                </div>
-
-                <div>
-                    <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de fin</label>
-                    <input type="datetime-local" name="fecha_fin"
-                           value="{{ old('fecha_fin', $formulario->fecha_fin) }}"
-                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
-                </div>
-            </div>
+    <div>
+        <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de fin</label>
+        <input type="datetime-local" name="fecha_fin"
+               value="{{ old('fecha_fin', $formulario->fecha_fin) }}"
+               min="{{ now()->format('Y-m-d\TH:i') }}"
+               @change="
+                   if($event.target.value){
+                       let fecha = new Date($event.target.value);
+                       let ahora = new Date();
+                       if(fecha > ahora){
+                           activo = 1;
+                       } else {
+                           activo = 0;
+                       }
+                   }
+               "
+               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
+        @error('fecha_fin')
+            <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+        @enderror
+    </div>
+</div>
 
 
          
-            {{-- Estado del formulario (toggle deslizable con modal) --}}
+       {{-- Estado del formulario (toggle deslizable con modal) --}}
 <h2 class="text-2xl font-semibold text-gray-800 mt-12 mb-5 flex items-center gap-2">
     <i class="bi bi-toggle-on text-[#025742]"></i> Estado del formulario
 </h2>
@@ -125,44 +140,44 @@
 <div class="flex items-center gap-3">
     <!-- Toggle deslizable -->
     <label class="relative inline-flex items-center cursor-pointer">
-    <input type="checkbox" :checked="activo === 1"
-           @change="activo = $event.target.checked ? 1 : 0; mostrarModal = true"
-           class="sr-only peer">
-    <div class="w-16 h-8 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-green-600 transition"></div>
-    <div class="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-8"></div>
-</label>
-<span class="ml-3 text-lg font-semibold" x-text="activo === 1 ? 'Activo' : 'Inactivo'"></span>
+        <input type="checkbox"
+               :checked="activo === 1"
+               @change="activo = $event.target.checked ? 1 : 0; mostrarModal = true"
+               class="sr-only peer">
+        <div class="w-16 h-8 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-green-600 transition"></div>
+        <div class="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-8"></div>
+    </label>
+    <span class="ml-3 text-lg font-semibold" x-text="activo === 1 ? 'Activo' : 'Inactivo'"></span>
 
-<!-- Campo oculto -->
-<input type="hidden" name="activo" :value="activo">
+    <!-- Campo oculto -->
+    <input type="hidden" name="activo" :value="activo">
 </div>
 
-
-            <!-- Modal de confirmación -->
-            <div x-show="mostrarModal"
-                class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-                x-transition>
-                <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Confirmación</h3>
-                    <p class="text-gray-700 mb-6">
-                        Desea <span x-text="activo === 1 ? 'activar' : 'desactivar'"></span> el formulario?
-                    </p>
-                    <div class="flex justify-end gap-3">
-                        <!-- Cancelar revierte el cambio -->
-                        <button type="button" 
-                                @click="mostrarModal = false; activo = activo === 1 ? 0 : 1"
-                                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow">
-                            Cancelar
-                        </button>
-                        <!-- Confirmar mantiene el valor elegido -->
-                        <button type="button" 
-                                @click="mostrarModal = false"
-                                class="bg-[#025742] hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow">
-                            Confirmar
-                        </button>
-                    </div>
-                </div>
-            </div>
+<!-- Modal de confirmación -->
+<div x-show="mostrarModal"
+     class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+     x-transition>
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Confirmación</h3>
+        <p class="text-gray-700 mb-6">
+            Desea <span x-text="activo === 1 ? 'activar' : 'desactivar'"></span> el formulario?
+        </p>
+        <div class="flex justify-end gap-3">
+            <!-- Cancelar revierte el cambio -->
+            <button type="button"
+                    @click="mostrarModal = false; activo = activo === 1 ? 0 : 1"
+                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow">
+                Cancelar
+            </button>
+            <!-- Confirmar mantiene el valor elegido -->
+            <button type="button"
+                    @click="mostrarModal = false"
+                    class="bg-[#025742] hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
 
             {{-- Botones Guardar y Cancelar --}}
             <div class="mt-12 flex gap-4">
