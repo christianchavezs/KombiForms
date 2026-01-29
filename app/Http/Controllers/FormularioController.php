@@ -179,15 +179,14 @@ public function actualizar(Request $request, $id)
 
     // Validaciones de fechas
     $request->validate([
-    'titulo' => 'required|string|max:255',
-    'config_respuesta' => 'required|in:anonimo,correo',
-    'fecha_inicio' => 'nullable|date|after_or_equal:now',
-    'fecha_fin'    => 'nullable|date|after:fecha_inicio|after_or_equal:now',
-], [
-    'fecha_inicio.after_or_equal' => 'La fecha de inicio no puede ser anterior al momento actual.',
-    'fecha_fin.after'             => 'La fecha de cierre debe ser mayor que la fecha de inicio.',
-    'fecha_fin.after_or_equal'    => 'La fecha de cierre no puede ser pasada.',
-]);
+        'titulo' => 'required|string|max:255',
+        'config_respuesta' => 'required|in:anonimo,correo',
+        'fecha_inicio' => 'nullable|date', // inicio flexible
+        'fecha_fin'    => 'nullable|date|after:fecha_inicio|after_or_equal:now',
+    ], [
+        'fecha_fin.after'          => 'La fecha de cierre debe ser mayor que la fecha de inicio.',
+        'fecha_fin.after_or_equal' => 'La fecha de cierre no puede ser pasada.',
+    ]);
 
     $config = $request->input('config_respuesta');
     $permitirAnonimo = $config === 'anonimo';

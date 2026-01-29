@@ -30,7 +30,7 @@
 
     <div class="bg-white rounded-2xl shadow-xl p-10 border border-gray-100">
 
-        <form action="{{ route('formularios.actualizar', $formulario->id) }}" method="POST"
+        <!--form action="{{ route('formularios.actualizar', $formulario->id) }}" method="POST"
               x-data="{
     opcion: '{{ $formulario->permitir_anonimo ? 'anonimo' : ($formulario->requiere_correo ? 'correo' : '') }}',
     titulo: '{{ old('titulo', $formulario->titulo) }}',
@@ -39,7 +39,36 @@
 }"
 
 
-              @submit.prevent="if(opcion === ''){ alert('Debes seleccionar una configuraci贸n de respuestas'); } else { $el.submit() }">
+              @submit.prevent="if(opcion === ''){ alert('Debes seleccionar una configuraci贸n de respuestas'); } else { $el.submit() }"-->
+
+        <form action="{{ route('formularios.actualizar', $formulario->id) }}" method="POST"
+            x-data="{
+                opcion: '{{ $formulario->permitir_anonimo ? 'anonimo' : ($formulario->requiere_correo ? 'correo' : '') }}',
+                titulo: '{{ old('titulo', $formulario->titulo) }}',
+                activo: {{ (int) $formulario->activo }},
+                mostrarModal: false,
+                fechaInicio: '{{ old('fecha_inicio', $formulario->fecha_inicio) }}',
+                fechaFin: '{{ old('fecha_fin', $formulario->fecha_fin) }}',
+                errorFechas: ''
+            }"
+            @submit.prevent="
+                let inicio = fechaInicio ? new Date(fechaInicio) : null;
+                let fin = fechaFin ? new Date(fechaFin) : null;
+                let ahora = new Date();
+
+                errorFechas = '';
+
+                if(opcion === ''){
+                    alert('Debes seleccionar una configuración de respuestas');
+                } else if(fin && inicio && fin <= inicio){
+                    errorFechas = 'La fecha de cierre debe ser mayor que la fecha de inicio.';
+                } else if(fin && fin <= ahora){
+                    errorFechas = 'La fecha de cierre no puede ser pasada.';
+                } else {
+                    $el.submit();
+                }
+            "
+        >
             @csrf
             @method('PUT')
 
@@ -94,42 +123,45 @@
                 <span class="text-gray-700 font-medium text-lg">Permitir solo 1 respuesta por persona</span>
             </label>
 
-            {{-- Fechas --}}
+ {{-- Fechas --}}
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
     <div>
-        <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de inicio</label>
-        <input type="datetime-local" name="fecha_inicio"
-               value="{{ old('fecha_inicio', $formulario->fecha_inicio) }}"
-               min="{{ now()->format('Y-m-d\TH:i') }}"
-               class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
-        @error('fecha_inicio')
-            <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
-        @enderror
-    </div>
+    <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de inicio</label>
+    <input type="datetime-local" name="fecha_inicio"
+           x-model="fechaInicio"
+           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
+    <!-- Aquí ya no hay min -->
+</div>
 
     <div>
         <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de fin</label>
         <input type="datetime-local" name="fecha_fin"
-               value="{{ old('fecha_fin', $formulario->fecha_fin) }}"
+               x-model="fechaFin"
                min="{{ now()->format('Y-m-d\TH:i') }}"
                @change="
                    if($event.target.value){
                        let fecha = new Date($event.target.value);
+                       let inicio = fechaInicio ? new Date(fechaInicio) : null;
                        let ahora = new Date();
-                       if(fecha > ahora){
+                       if(fecha > ahora && (!inicio || fecha > inicio)){
                            activo = 1;
+                           errorFechas = '';
                        } else {
                            activo = 0;
+                           if(inicio && fecha <= inicio){
+                               errorFechas = 'La fecha de cierre debe ser mayor que la fecha de inicio.';
+                           } else if(fecha <= ahora){
+                               errorFechas = 'La fecha de cierre no puede ser pasada.';
+                           }
                        }
                    }
                "
                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
-        @error('fecha_fin')
-            <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
-        @enderror
     </div>
 </div>
 
+<!-- Mensaje dinámico de error -->
+<div x-show="errorFechas" class="mt-2 text-red-600 text-sm" x-text="errorFechas"></div>
 
          
        {{-- Estado del formulario (toggle deslizable con modal) --}}
