@@ -144,13 +144,33 @@ class FormularioController extends Controller
     // ===============================================
     // CONFIGURACIÓN DEL FORMULARIO
     // ===============================================
-    public function configuracion(Request $request, $id)
+    /*public function configuracion(Request $request, $id)
     {
         $formulario = Formulario::findOrFail($id);
         $from = $request->query('from', 'index'); // por defecto lista de formularios
 
         return view('formularios.configuracion', compact('formulario', 'from'));
-    }
+    }*/
+
+        // ===============================================
+        // CONFIGURACIÓN DEL FORMULARIO
+        // ===============================================
+        public function configuracion(Request $request, $id)
+        {
+            $formulario = Formulario::findOrFail($id);
+
+            // Validar si la fecha de fin ya pasó
+            if ($formulario->fecha_fin && now()->greaterThan($formulario->fecha_fin)) {
+                $formulario->activo = 0;              // Apagar el formulario
+                $formulario->fecha_inicio = null;     // Limpiar fecha inicio
+                $formulario->fecha_fin = null;        // Limpiar fecha fin
+                $formulario->save();                  // Guardar cambios en la BD
+            }
+
+            $from = $request->query('from', 'index'); // por defecto lista de formularios
+
+            return view('formularios.configuracion', compact('formulario', 'from'));
+        }
 
 
     // ===============================================
