@@ -37,25 +37,9 @@
                         {{ $form->titulo }}
                     </td>
 
-                    {{-- Estado --}}
-                    @php
-                        $hoy = now();
-                        if ($form->fecha_inicio && $form->fecha_inicio > $hoy) {
-                            $estado = 'Programado';
-                            $color = 'bg-blue-100 text-blue-700';
-                        } elseif ($form->fecha_fin && $form->fecha_fin < $hoy) {
-                            $estado = 'Cerrado';
-                            $color = 'bg-red-100 text-red-700';
-                        } else {
-                            $estado = 'Activo';
-                            $color = 'bg-green-100 text-green-700';
-                        }
-                    @endphp
-
-                    <td class="px-4 py-4">
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $color }}">
-                            {{ $estado }}
-                        </span>
+                    {{-- Estado: mostrar Activo/Inactivo según BD --}}
+                    <td class="px-4 py-4 text-gray-700 font-semibold">
+                        {{ $form->activo == 1 ? 'Activo' : 'Inactivo' }}
                     </td>
 
                     <td class="px-4 py-4 text-gray-600">
