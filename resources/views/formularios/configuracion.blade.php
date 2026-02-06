@@ -142,6 +142,7 @@
 
 
        {{-- Fechas --}}
+{{-- Fechas --}}
 <h2 class="text-2xl font-semibold text-gray-800 mt-12 mb-5 flex items-center gap-2">
     <i class="bi bi-calendar-event text-[#025742]"></i> Fechas
 </h2>
@@ -152,6 +153,19 @@
         <input type="datetime-local" name="fecha_inicio"
                x-model="fechaInicio"
                value="{{ old('fecha_inicio', $formulario->fecha_inicio) }}"
+               @blur="
+                    if(fechaInicio && fechaFin){
+                        let inicio = new Date(fechaInicio);
+                        let fin = new Date(fechaFin);
+
+                        if(inicio >= fin){
+                            mostrarAviso = 'La fecha de inicio debe ser menor que la fecha de fin';
+                            fechaInicio = null;
+                        } else {
+                            mostrarAviso = '';
+                        }
+                    }
+               "
                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
     </div>
 
@@ -160,17 +174,28 @@
         <input type="datetime-local" name="fecha_fin"
                x-model="fechaFin"
                value="{{ old('fecha_fin', $formulario->fecha_fin) }}"
-               @blur="if(fechaFin && new Date(fechaFin) < new Date()){ 
-                          alert('La fecha de fin no puede ser anterior a la fecha actual'); 
-                          fechaFin = null; 
-                      } else if(fechaFin){ 
-                          activo = 1; 
-                      }"
+               @blur="
+                    if(fechaFin){
+                        let inicio = fechaInicio ? new Date(fechaInicio) : null;
+                        let fin = new Date(fechaFin);
+                        let ahora = new Date();
+
+                        if(fin < ahora){
+                            mostrarAviso = 'La fecha de fin no puede ser anterior a la fecha actual';
+                            fechaFin = null;
+                        } else if(inicio && fin <= inicio){
+                            mostrarAviso = 'La fecha de fin debe ser mayor que la fecha de inicio y no pueden ser iguales';
+                            fechaFin = null;
+                        } else {
+                            mostrarAviso = '';
+                            activo = 1;
+                        }
+                    }
+               "
                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
-        <p class="text-red-600 text-sm mt-1" 
-           x-show="fechaFin && new Date(fechaFin) < new Date()">
-           Fecha no válida: debe ser posterior a la actual.
-        </p>
+
+        <!-- Aviso en rojo -->
+        <p class="text-red-600 text-sm mt-1 font-semibold" x-text="mostrarAviso" x-show="mostrarAviso"></p>
     </div>
 </div>
 
