@@ -37,9 +37,21 @@
                         {{ $form->titulo }}
                     </td>
 
-                    {{-- Estado: mostrar Activo/Inactivo según BD --}}
-                    <td class="px-4 py-4 text-gray-700 font-semibold">
-                        {{ $form->activo == 1 ? 'Activo' : 'Inactivo' }}
+                    {{-- Estado: mostrar Activo/Inactivo con estilo pill --}}
+                    <td class="px-4 py-4">
+                        @if($form->activo == 1)
+                            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold 
+                                        bg-gradient-to-r from-green-400 to-green-600 text-white shadow-md">
+                                <span class="w-3 h-3 bg-white rounded-full animate-pulse"></span>
+                                Activo
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold 
+                                        bg-gradient-to-r from-red-400 to-red-600 text-white shadow-md">
+                                <span class="w-3 h-3 bg-white rounded-full"></span>
+                                Inactivo
+                            </span>
+                        @endif
                     </td>
 
                     <td class="px-4 py-4 text-gray-600">
