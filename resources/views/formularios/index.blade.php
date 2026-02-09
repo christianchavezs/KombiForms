@@ -25,6 +25,8 @@
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Título</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Estado</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Fecha inicio</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Fecha fin</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Respuestas</th>
                     <th class="px-4 py-3 text-right text-xs font-semibold uppercase">Acciones</th>
                 </tr>
@@ -32,27 +34,76 @@
 
             <tbody class="divide-y divide-gray-100">
                 @forelse ($formularios as $form)
-                <tr class="transition transform hover:scale-[1.02] hover:bg-green-50">
+                <tr class="transition transform hover:scale-[1.02] hover:bg-green-50"
+    x-data="{
+        fechaInicio: '{{ $form->fecha_inicio }}',
+        fechaFin: '{{ $form->fecha_fin }}',
+        activo: {{ (int) $form->activo }},
+        estado: '{{ $form->estado ?? '' }}',
+        init(){
+            let ahora = new Date();
+            if(this.fechaFin && new Date(this.fechaFin) <= ahora){
+                this.activo = 0;
+                this.estado = 'Inactivo';
+            } else if(this.fechaInicio && new Date(this.fechaInicio) <= ahora && (!this.fechaFin || new Date(this.fechaFin) > ahora)){
+                this.activo = 1;
+                this.estado = 'Activo';
+            } else if(this.fechaInicio && new Date(this.fechaInicio) > ahora){
+                this.activo = 0;
+                this.estado = 'Programado';
+            } else {
+                // Sin fechas: respetar lo que ya tenga en BD
+                this.estado = this.activo ? 'Activo' : 'Inactivo';
+            }
+        }
+    }"
+>
+
+
+
+
+
                     <td class="px-4 py-4 text-gray-800 font-medium">
                         {{ $form->titulo }}
                     </td>
 
-                    {{-- Estado: mostrar Activo/Inactivo con estilo pill --}}
-                    <td class="px-4 py-4">
-                        @if($form->activo == 1)
-                            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold 
-                                        bg-gradient-to-r from-green-400 to-green-600 text-white shadow-md">
-                                <span class="w-3 h-3 bg-white rounded-full animate-pulse"></span>
-                                Activo
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold 
-                                        bg-gradient-to-r from-red-400 to-red-600 text-white shadow-md">
-                                <span class="w-3 h-3 bg-white rounded-full"></span>
-                                Inactivo
-                            </span>
-                        @endif
-                    </td>
+                    
+                  {{-- Estado: mostrar Activo/Inactivo/Programado calculado --}}
+{{-- Estado: mostrar Activo/Inactivo/Programado calculado --}}
+<td class="px-4 py-4">
+    <template x-if="estado === 'Programado'">
+        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold 
+                     bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-md">
+            <span class="w-3 h-3 bg-white rounded-full animate-bounce"></span>
+            Programado
+        </span>
+    </template>
+
+    <template x-if="estado === 'Activo'">
+        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold 
+                     bg-gradient-to-r from-green-400 to-green-600 text-white shadow-md">
+            <span class="w-3 h-3 bg-white rounded-full animate-pulse"></span>
+            Activo
+        </span>
+    </template>
+
+    <template x-if="estado === 'Inactivo'">
+        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold 
+                     bg-gradient-to-r from-red-400 to-red-600 text-white shadow-md">
+            <span class="w-3 h-3 bg-white rounded-full"></span>
+            Inactivo
+        </span>
+    </template>
+</td>
+
+
+
+                    <td class="px-4 py-4 text-gray-600">
+    {{ $form->fecha_inicio ? $form->fecha_inicio : '------------' }}
+</td>
+<td class="px-4 py-4 text-gray-600">
+    {{ $form->fecha_fin ? $form->fecha_fin : '------------' }}
+</td>
 
                     <td class="px-4 py-4 text-gray-600">
                         {{ $form->respuestas_count }}

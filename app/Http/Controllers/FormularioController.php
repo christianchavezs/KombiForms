@@ -21,29 +21,16 @@ class FormularioController extends Controller
     // ===============================================
     // LISTAR FORMULARIOS
     // ===============================================
-    public function index()
-    {
-        $hoy = now();
+  
+public function index()
+{
+    $formularios = Formulario::withCount('respuestas')
+        ->orderBy('id', 'desc')
+        ->get();
 
-        $formularios = Formulario::withCount('respuestas')
-            ->orderBy('id', 'desc')
-            ->get()
-            ->map(function ($form) use ($hoy) {
-                if (
-                    (!$form->fecha_inicio || $form->fecha_inicio <= $hoy) &&
-                    (!$form->fecha_fin || $form->fecha_fin >= $hoy)
-                ) {
-                    $form->estado = 'Activo';
-                } elseif ($form->fecha_inicio && $form->fecha_inicio > $hoy) {
-                    $form->estado = 'Programado';
-                } else {
-                    $form->estado = 'Cerrado';
-                }
-                return $form;
-            });
-
-        return view('formularios.index', compact('formularios'));
-    }
+    return view('formularios.index', compact('formularios'));
+}
+    
 
     // ===============================================
     // CREAR FORMULARIO
