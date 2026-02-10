@@ -434,7 +434,37 @@ public function concentrarRespuestas($id)
 }
 
 
+public function registrarRespuestaFormulario(Request $request, Formulario $formulario)
+{
+    // Caso: requiere correo
+    if ($formulario->requiere_correo) {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
 
+        // Si es de una sola respuesta, validamos duplicados
+        if ($formulario->una_respuesta) {
+            $existe = Respuesta::where('formulario_id', $formulario->id)
+                               ->where('email', $request->email)
+                               ->exists();
+
+            if ($existe) {
+                return back()->withErrors([
+                    'email' => 'Ya has respondido este formulario.',
+                ]);
+            }
+        }
+    } else {
+        // Caso: anónimo permitido
+        if (!$formulario->permitir_anonimo) {
+            return back()->withErrors([
+                'general' => 'Este formulario requiere correo electrónico.',
+            ]);
+        }
+    }
+
+    
+}
 
 
 

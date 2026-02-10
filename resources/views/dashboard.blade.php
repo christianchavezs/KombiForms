@@ -97,19 +97,14 @@
             <ul class="divide-y divide-gray-100">
                 @forelse ($ultimosFormularios as $form)
                 <li class="py-4 flex items-center justify-between hover:bg-gray-50 transition">
-                    <div>
-                        <p class="text-gray-900 font-medium">{{ $form->titulo }}</p>
-                        <p class="text-gray-500 text-sm">Respuestas: {{ $form->respuestas_count }}</p>
-                    </div>
-                    @php
-                        $hoy = now();
-                        $activo = (!$form->fecha_inicio || $form->fecha_inicio <= $hoy) &&
-                                  (!$form->fecha_fin || $form->fecha_fin >= $hoy);
-                    @endphp
-                    <span class="status-pill {{ $activo ? 'activo' : 'inactivo' }}">
-                        {{ $activo ? 'Activo' : 'Inactivo' }}
-                    </span>
-                </li>
+    <div>
+        <p class="text-gray-900 font-medium">{{ $form->titulo }}</p>
+        <p class="text-gray-500 text-sm">Respuestas: {{ $form->respuestas_count }}</p>
+    </div>
+    <span class="status-pill {{ $form->activo ? 'activo' : 'inactivo' }}">
+        {{ $form->activo ? 'Activo' : 'Inactivo' }}
+    </span>
+</li>
                 @empty
                 <p class="text-gray-500 text-sm">No hay formularios recientes.</p>
                 @endforelse
