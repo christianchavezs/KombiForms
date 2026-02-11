@@ -38,9 +38,9 @@ class Contestar_FormularioController extends Controller
             $data = [ 'formulario_id' => $formulario->id, ];
 
             //cuando no es anonimo guarda el id del usuario y el correo 
-            if ($formulario->permitir_anonimo === false) {
+            if (!$formulario->permitir_anonimo && Auth::check()) {
                 $data['usuario_id'] = Auth::id();
-                $data['correo_respondedor'] = $request->correo_respondedor;
+                $data['correo_respondedor'] = Auth::user()->email;
             }
 
             $respuesta =  Respuesta::create($data);
@@ -52,7 +52,7 @@ class Contestar_FormularioController extends Controller
 
                 switch ($pregunta->tipo) {
 
-                    // 📝 TEXTO
+                    //  TEXTO
                     case 'texto_corto':
                     case 'parrafo':
                         RespuestaIndividual::create([
@@ -62,17 +62,25 @@ class Contestar_FormularioController extends Controller
                         ]);
                         break;
 
-                    // 🔘 OPCIÓN ÚNICA / ESCALA
+                    //  OPCIÓN ÚNICA
                     case 'opcion_multiple':
-                    case 'escala_lineal':
                         RespuestaIndividual::create([
                             'respuesta_id' => $respuesta->id,
                             'pregunta_id'  => $preguntaId,
                             'opcion_id'    => $valor,
                         ]);
                         break;
+                    
+                    // ESCALA LINEAL
+                    case 'escala_lineal':
+                        RespuestaIndividual::create([
+                            'respuesta_id'   => $respuesta->id,
+                            'pregunta_id'    => $preguntaId,
+                            'valor_numerico' => $valor, // aquí se guarda directamente el número elegido (ej. 3 de un rango 1–7)
+                        ]);
+                        break;
 
-                    // ☑️ CASILLAS
+                    //  CASILLAS
                     case 'casillas':
                         foreach ($valor as $opcionId) {
                             RespuestaIndividual::create([
@@ -83,7 +91,7 @@ class Contestar_FormularioController extends Controller
                         }
                         break;
 
-                    // 📊 CUADRÍCULA OPCIÓN ÚNICA
+                    //  CUADRÍCULA OPCIÓN ÚNICA
                     case 'cuadricula_opciones':
                         foreach ($valor as $filaId => $opcionId) {
                             RespuestaIndividual::create([
@@ -95,7 +103,7 @@ class Contestar_FormularioController extends Controller
                         }
                         break;
 
-                    // 📋 CUADRÍCULA CASILLAS
+                    //  CUADRÍCULA CASILLAS
                     case 'cuadricula_casillas':
                         foreach ($valor as $filaId => $columnas) {
                             foreach ($columnas as $opcionId) {

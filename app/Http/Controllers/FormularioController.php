@@ -232,7 +232,7 @@ public function index()
     // ===============================================
     // ACCEDER A FORMULARIO POR TOKEN (enlace público)
     // ===============================================
-    public function acceder($token)
+    /*public function acceder($token)
     {
         $formulario = Formulario::where('token', $token)->firstOrFail();
 
@@ -256,7 +256,52 @@ public function index()
         $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
 
         return view('formularios.responder', compact('formulario'));
+    }*/
+    
+    public function acceder($token)
+    {
+        $formulario = Formulario::where('token', $token)->firstOrFail();
+
+        // Si está inactivo → mostrar vista de cerrado
+        if (!$formulario->activo) {
+            return view('formularios.formularioCerrado', compact('formulario'));
+        }
+
+        // Si el formulario permite respuestas anónimas → vista loginAnonimo
+        if ($formulario->permitir_anonimo) {
+            return view('formularios.loginAnonimo', compact('formulario'));
+        }
+
+        // Guardamos a dónde debe volver después del login
+        session(['url.intended' => route('mostrar', $formulario)]);
+
+        // Si requiere usuario registrado → redirigir al login normal
+        return redirect()->route('login');
     }
+
+  public function responder($id)
+{
+    $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
+
+    // Si está inactivo → mostrar vista de cerrado
+    if (!$formulario->activo) {
+        return view('formularios.formularioCerrado', compact('formulario'));
+    }
+
+    // Si requiere correo y es de una sola respuesta
+    if ($formulario->requiere_correo && $formulario->una_respuesta) {
+        $existe = Respuesta::where('formulario_id', $formulario->id)
+                           ->where('email', auth()->user()->email) // correo del usuario logueado
+                           ->exists();
+
+        if ($existe) {
+            // Mostrar vista de "ya contestado"
+            return view('formularios.formularioYaContestado', compact('formulario'));
+        }
+    }
+
+    return view('formularios.responder', compact('formulario'));
+}
 
 
 
@@ -434,37 +479,6 @@ public function concentrarRespuestas($id)
 }
 
 
-public function registrarRespuestaFormulario(Request $request, Formulario $formulario)
-{
-    // Caso: requiere correo
-    if ($formulario->requiere_correo) {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
-        // Si es de una sola respuesta, validamos duplicados
-        if ($formulario->una_respuesta) {
-            $existe = Respuesta::where('formulario_id', $formulario->id)
-                               ->where('email', $request->email)
-                               ->exists();
-
-            if ($existe) {
-                return back()->withErrors([
-                    'email' => 'Ya has respondido este formulario.',
-                ]);
-            }
-        }
-    } else {
-        // Caso: anónimo permitido
-        if (!$formulario->permitir_anonimo) {
-            return back()->withErrors([
-                'general' => 'Este formulario requiere correo electrónico.',
-            ]);
-        }
-    }
-
-    
-}
 
 
 
