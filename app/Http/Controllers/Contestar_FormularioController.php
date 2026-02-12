@@ -23,10 +23,35 @@ class Contestar_FormularioController extends Controller
         return view('gracias');
     }
 
-    public function mostrar(Formulario $formulario)
+    /*public function mostrar(Formulario $formulario)
     {
         $formulario->load('secciones.preguntas.opciones');
 
+        return view('Contestar_formulario', compact('formulario'));
+    }*/
+
+    public function mostrar(Formulario $formulario)
+    {
+        // Cargar relaciones necesarias
+        $formulario->load('secciones.preguntas.opciones');
+
+        // Caso: formulario inactivo
+        if (!$formulario->activo) {
+            return view('formularios.formularioCerrado', compact('formulario'));
+        }
+
+        // Caso: requiere correo y es de una sola respuesta
+        if ($formulario->requiere_correo && $formulario->una_respuesta && Auth::check()) {
+            $yaContestado = Respuesta::where('formulario_id', $formulario->id)
+                                    ->where('correo_respondedor', Auth::user()->email)
+                                    ->exists();
+
+            if ($yaContestado) {
+                return view('formularios.formularioYaContestado', compact('formulario'));
+            }
+        }
+
+        // Si no aplica la restricción, mostrar el formulario normalmente
         return view('Contestar_formulario', compact('formulario'));
     }
 
