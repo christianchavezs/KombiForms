@@ -36,10 +36,34 @@
     <!-- Card principal -->
     <div class="bg-white rounded-2xl shadow-xl p-10 border border-gray-100">
 
-        <form action="{{ route('formularios.guardar') }}" method="POST"
+        <!--form action="{{ route('formularios.guardar') }}" method="POST"
               x-data="{ opcion: '', titulo: '', activo: true, mostrarModal: false }"
               @submit.prevent="if(opcion === ''){ alert('Debes seleccionar una configuración de respuestas'); } else { $el.submit() }">
+            @csrf*/-->
+
+        <form action="{{ route('formularios.guardar') }}" method="POST"
+            x-data="{  
+                opcion: '',  
+                titulo: '{{ old('titulo') }}',  
+                activo: true,  
+                mostrarModal: false,  
+                mostrarAviso: false,  
+                unaRespuesta: false,  
+                fechaInicio: '{{ old('fecha_inicio') }}',  
+                fechaFin: '{{ old('fecha_fin') }}',  
+                init(){  
+                    if(this.fechaFin && new Date(this.fechaFin) < new Date()){  
+                        this.activo = 0;  
+                    }  
+                }  
+            }"
+            x-effect="if (opcion !== 'correo') { unaRespuesta = false }"
+            @submit.prevent="if(opcion === ''){ alert('Debes seleccionar una configuración de respuestas'); } else { $el.submit() }">
             @csrf
+
+            <input type="hidden" name="from" value="{{ $from }}">
+            <input type="hidden" name="activo" :value="activo">
+
 
             {{-- Título del formulario --}}
             <div class="mb-10">
@@ -59,7 +83,7 @@
                           placeholder="Agrega una breve descripción del formulario..."></textarea>
             </div>
 
-            {{-- Configuración principal (selector) --}}
+           {{-- Configuración principal (selector) --}}
             <h2 class="text-2xl font-semibold text-gray-800 mt-12 mb-5 flex items-center gap-2">
                 <i class="bi bi-gear-fill text-[#025742]"></i> Configuración de respuestas
             </h2>
@@ -78,11 +102,35 @@
                 <i class="bi bi-check2-square text-[#025742]"></i> Restricciones
             </h2>
 
-            <label class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#025742] hover:bg-green-50 transition cursor-pointer">
-                <input type="checkbox" name="una_respuesta"
-                       class="rounded text-[#025742] focus:ring-[#025742] w-6 h-6">
-                <span class="text-gray-700 font-medium text-lg">Permitir solo 1 respuesta por persona</span>
+            <label
+                class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#025742] hover:bg-green-50 transition cursor-pointer"
+                @click='
+                    if (opcion !== "correo") {
+                        $event.preventDefault();
+                        mostrarAviso = true;
+                        setTimeout(() => mostrarAviso = false, 3000);
+                    }
+                '
+            >
+                <input type="checkbox"
+                    name="una_respuesta"
+                    class="rounded text-[#025742] focus:ring-[#025742] w-6 h-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                    x-model="unaRespuesta"
+                    :disabled="opcion !== 'correo'">
+
+                <span class="text-gray-700 font-medium text-lg">
+                    Permitir solo 1 respuesta por persona
+                </span>
             </label>
+
+            <div
+                x-show="mostrarAviso"
+                x-transition
+                class="mt-3 flex items-center gap-2 rounded-lg bg-red-100 border border-red-300 text-red-800 px-4 py-2 text-sm"
+            >
+                <i class="bi bi-x-octagon-fill"></i>
+                Debes seleccionar <strong>Requerir correo electrónico</strong> para activar esta opción.
+            </div>
 
             {{-- Fechas --}}
             <h2 class="text-2xl font-semibold text-gray-800 mt-12 mb-5 flex items-center gap-2">
@@ -93,13 +141,50 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de inicio</label>
                     <input type="datetime-local" name="fecha_inicio"
-                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
+                        x-model="fechaInicio"
+                        value="{{ old('fecha_inicio') }}"
+                        @blur="
+                                if(fechaInicio && fechaFin){
+                                    let inicio = new Date(fechaInicio);
+                                    let fin = new Date(fechaFin);
+
+                                    if(inicio >= fin){
+                                        mostrarAviso = 'La fecha de inicio debe ser menor que la fecha de fin';
+                                        fechaInicio = null;
+                                    } else {
+                                        mostrarAviso = '';
+                                    }
+                                }
+                        "
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
                 </div>
 
                 <div>
                     <label class="block text-gray-700 font-medium mb-2 text-lg">Fecha de fin</label>
                     <input type="datetime-local" name="fecha_fin"
-                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
+                        x-model="fechaFin"
+                        value="{{ old('fecha_fin') }}"
+                        @blur="
+                                if(fechaFin){
+                                    let inicio = fechaInicio ? new Date(fechaInicio) : null;
+                                    let fin = new Date(fechaFin);
+                                    let ahora = new Date();
+
+                                    if(fin < ahora){
+                                        mostrarAviso = 'La fecha de fin no puede ser anterior a la fecha actual';
+                                        fechaFin = null;
+                                    } else if(inicio && fin <= inicio){
+                                        mostrarAviso = 'La fecha de fin debe ser mayor que la fecha de inicio y no pueden ser iguales';
+                                        fechaFin = null;
+                                    } else {
+                                        mostrarAviso = '';
+                                        activo = 1;
+                                    }
+                                }
+                        "
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#025742] focus:ring-[#025742] transition text-lg">
+
+                    <p class="text-red-600 text-sm mt-1 font-semibold" x-text="mostrarAviso" x-show="mostrarAviso"></p>
                 </div>
             </div>
 
@@ -109,30 +194,34 @@
             </h2>
 
             <div class="flex items-center gap-3">
-                <!-- Toggle deslizable -->
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" x-model="activo" @change="mostrarModal = true" class="sr-only peer">
+                    <input type="checkbox" :checked="activo === 1"
+                        @change="activo = $event.target.checked ? 1 : 0; mostrarModal = true"
+                        class="sr-only peer">
                     <div class="w-16 h-8 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-green-600 transition"></div>
                     <div class="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-8"></div>
                 </label>
-                <span class="ml-3 text-lg font-semibold" x-text="activo ? 'Activo' : 'Inactivo'"></span>
+                <span class="ml-3 text-lg font-semibold" x-text="activo === 1 ? 'Activo' : 'Inactivo'"></span>
+
+                <input type="hidden" name="activo" :value="activo">
             </div>
 
-            <!-- Modal de confirmación -->
             <div x-show="mostrarModal"
-                 class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-                 x-transition>
+                class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                x-transition>
                 <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
                     <h3 class="text-xl font-bold text-gray-800 mb-4">Confirmación</h3>
                     <p class="text-gray-700 mb-6">
-                        Desea <span x-text="activo ? 'activar' : 'desactivar'"></span> el formulario?
+                        Desea <span x-text="activo === 1 ? 'activar' : 'desactivar'"></span> el formulario?
                     </p>
                     <div class="flex justify-end gap-3">
-                        <button type="button" @click="mostrarModal = false; activo = !activo"
+                        <button type="button"
+                                @click="mostrarModal = false; activo = activo === 1 ? 0 : 1"
                                 class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow">
                             Cancelar
                         </button>
-                        <button type="button" @click="mostrarModal = false"
+                        <button type="button"
+                                @click="mostrarModal = false; if(activo === 0){ fechaInicio = null; fechaFin = null }"
                                 class="bg-[#025742] hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow">
                             Confirmar
                         </button>

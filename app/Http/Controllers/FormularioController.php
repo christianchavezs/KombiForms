@@ -47,7 +47,7 @@ public function index()
     // ===============================================
     // GUARDAR FORMULARIO
     // ===============================================
-    public function guardar(Request $request)
+    /*public function guardar(Request $request)
     {
         // 🔹 Validación
         $data = $request->validate([
@@ -71,7 +71,36 @@ public function index()
         return redirect()
             ->route('formularios.editar', $formulario->id)
             ->with('success', 'Formulario creado correctamente.');
-    }
+    }*/
+
+    public function guardar(Request $request)
+{
+    // 🔹 Validación
+    $data = $request->validate([
+        'titulo' => 'required|string|max:255',
+        'descripcion' => 'nullable|string',
+        'fecha_inicio' => 'nullable|date',
+        'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
+        'config_respuesta' => 'required|in:anonimo,correo', // validamos que sea válido
+    ]);
+
+    // 🔹 Mapear la opción seleccionada a los booleanos
+    $data['permitir_anonimo'] = $request->config_respuesta === 'anonimo';
+    $data['requiere_correo'] = $request->config_respuesta === 'correo';
+
+    // 🔹 Checkbox de restricción
+    $data['una_respuesta'] = $request->boolean('una_respuesta');
+
+    // 🔹 Asignación del creador
+    $data['creador_id'] = auth()->id();
+
+    // 🔹 Crear el formulario
+    $formulario = Formulario::create($data);
+
+    return redirect()
+        ->route('formularios.editar', $formulario->id)
+        ->with('success', 'Formulario creado correctamente.');
+}
 
     // ===============================================
     // EDITAR FORMULARIO (Constructor)
