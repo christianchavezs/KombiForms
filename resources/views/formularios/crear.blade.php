@@ -36,16 +36,11 @@
     <!-- Card principal -->
     <div class="bg-white rounded-2xl shadow-xl p-10 border border-gray-100">
 
-        <!--form action="{{ route('formularios.guardar') }}" method="POST"
-              x-data="{ opcion: '', titulo: '', activo: true, mostrarModal: false }"
-              @submit.prevent="if(opcion === ''){ alert('Debes seleccionar una configuración de respuestas'); } else { $el.submit() }">
-            @csrf*/-->
-
         <form action="{{ route('formularios.guardar') }}" method="POST"
             x-data="{  
                 opcion: '',  
                 titulo: '{{ old('titulo') }}',  
-                activo: true,  
+                activo: 0, // inactivo por defecto  
                 mostrarModal: false,  
                 mostrarAviso: false,  
                 unaRespuesta: false,  
@@ -62,7 +57,8 @@
             @csrf
 
             <input type="hidden" name="from" value="{{ $from }}">
-            <input type="hidden" name="activo" :value="activo">
+           
+           <input type="hidden" name="activo" :value="activo">
 
 
             {{-- Título del formulario --}}

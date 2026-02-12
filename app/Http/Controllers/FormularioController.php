@@ -73,15 +73,19 @@ public function index()
             ->with('success', 'Formulario creado correctamente.');
     }*/
 
+
+
     public function guardar(Request $request)
 {
+        //dd($request->all());
     // 🔹 Validación
     $data = $request->validate([
         'titulo' => 'required|string|max:255',
         'descripcion' => 'nullable|string',
         'fecha_inicio' => 'nullable|date',
         'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
-        'config_respuesta' => 'required|in:anonimo,correo', // validamos que sea válido
+        'config_respuesta' => 'required|in:anonimo,correo',
+        // quitamos la validación de activo
     ]);
 
     // 🔹 Mapear la opción seleccionada a los booleanos
@@ -90,6 +94,9 @@ public function index()
 
     // 🔹 Checkbox de restricción
     $data['una_respuesta'] = $request->boolean('una_respuesta');
+
+    // 🔹 Estado del formulario (toggle)
+    $data['activo'] = $request->boolean('activo'); // convierte "true"/"false" en 1/0
 
     // 🔹 Asignación del creador
     $data['creador_id'] = auth()->id();
