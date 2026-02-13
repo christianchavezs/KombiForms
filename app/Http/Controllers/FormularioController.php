@@ -341,7 +341,7 @@ public function index()
 
 
 
-    public function mostrarConcentrado($id)
+    /*public function mostrarConcentrado($id)
     {
         $formulario = Formulario::with(['secciones.preguntas.opciones', 'respuestas'])->findOrFail($id);
 
@@ -364,6 +364,50 @@ public function index()
         }
 
         return view('formularios.concentradoRespuestas', compact('formulario', 'estadisticas'));
+}*/
+
+public function mostrarConcentrado($id)
+{
+    $formulario = Formulario::with([
+        'secciones.preguntas.opciones',
+        'respuestas.usuario',
+        'respuestas.respuestasIndividuales.opcion'
+    ])->findOrFail($id);
+
+    $estadisticas = [];
+
+    foreach ($formulario->secciones as $seccion) {
+        foreach ($seccion->preguntas as $pregunta) {
+            if ($pregunta->opciones->count() > 0) {
+                // Preguntas con opciones
+                $estadisticas[$pregunta->id] = $pregunta->opciones->map(function ($opcion) use ($pregunta) {
+                    $conteo = DB::table('respuestas_individuales')
+                        ->where('pregunta_id', $pregunta->id)
+                        ->where('opcion_id', $opcion->id)
+                        ->count();
+
+                    return [
+                        'opcion' => $opcion->texto,
+                        'conteo' => $conteo,
+                    ];
+                });
+            } else {
+                // Preguntas abiertas: contar texto_respuesta no vacío
+                $conteo = DB::table('respuestas_individuales')
+                    ->where('pregunta_id', $pregunta->id)
+                    ->whereNotNull('texto_respuesta')
+                    ->where('texto_respuesta', '!=', '')
+                    ->count();
+
+                $estadisticas[$pregunta->id] = collect([[
+                    'opcion' => 'Respuestas abiertas',
+                    'conteo' => $conteo,
+                ]]);
+            }
+        }
+    }
+
+    return view('formularios.concentradoRespuestas', compact('formulario', 'estadisticas'));
 }
 
 public function concentrarRespuestas($id)
