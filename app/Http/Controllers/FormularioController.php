@@ -379,7 +379,7 @@ public function mostrarConcentrado($id)
     foreach ($formulario->secciones as $seccion) {
         foreach ($seccion->preguntas as $pregunta) {
             if ($pregunta->opciones->count() > 0) {
-                // Preguntas con opciones
+                // Preguntas con opciones (opción múltiple, casillas, etc.)
                 $estadisticas[$pregunta->id] = $pregunta->opciones->map(function ($opcion) use ($pregunta) {
                     $conteo = DB::table('respuestas_individuales')
                         ->where('pregunta_id', $pregunta->id)
@@ -392,17 +392,35 @@ public function mostrarConcentrado($id)
                     ];
                 });
             } else {
-                // Preguntas abiertas: contar texto_respuesta no vacío
-                $conteo = DB::table('respuestas_individuales')
-                    ->where('pregunta_id', $pregunta->id)
-                    ->whereNotNull('texto_respuesta')
-                    ->where('texto_respuesta', '!=', '')
-                    ->count();
+                // Preguntas abiertas según tipo
+                switch ($pregunta->tipo) {
+                    case 'texto_corto':
+                    case 'parrafo':
+                        // Contar respuestas con texto_respuesta no vacío
+                        $conteo = DB::table('respuestas_individuales')
+                            ->where('pregunta_id', $pregunta->id)
+                            ->whereNotNull('texto_respuesta')
+                            ->where('texto_respuesta', '!=', '')
+                            ->count();
 
-                $estadisticas[$pregunta->id] = collect([[
-                    'opcion' => 'Respuestas abiertas',
-                    'conteo' => $conteo,
-                ]]);
+                        $estadisticas[$pregunta->id] = collect([[
+                            'opcion' => 'Respuestas abiertas',
+                            'conteo' => $conteo,
+                        ]]);
+                        break;
+
+                    default:
+                        // Fallback genérico para otros tipos
+                        $conteo = DB::table('respuestas_individuales')
+                            ->where('pregunta_id', $pregunta->id)
+                            ->count();
+
+                        $estadisticas[$pregunta->id] = collect([[
+                            'opcion' => 'Respuestas registradas',
+                            'conteo' => $conteo,
+                        ]]);
+                        break;
+                }
             }
         }
     }

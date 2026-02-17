@@ -57,30 +57,45 @@
                                 </div>
 
                                 {{-- Total respuestas (si aplica) --}}
-                                <div class="text-right">
+                                <div class="text-sm text-gray-500 text-right">
                                     @php
-                                        // Intentamos obtener total desde $estadisticas si existe
                                         $totalOpciones = 0;
+
                                         if (!empty($estadisticas[$pregunta->id]) && is_array($estadisticas[$pregunta->id])) {
                                             foreach ($estadisticas[$pregunta->id] as $d) {
                                                 $totalOpciones += isset($d['conteo']) ? (int)$d['conteo'] : 0;
                                             }
                                         } else {
-                                            // calcular total recorriendo respuestas (solo si no hay estadisticas)
                                             foreach ($formulario->respuestas as $r) {
                                                 $ri = $r->respuestasIndividuales ?? collect();
                                                 if (!is_a($ri, 'Illuminate\\Support\\Collection')) $ri = collect($ri);
                                                 $riFor = $ri->where('pregunta_id', $pregunta->id);
+
                                                 foreach ($riFor as $it) {
-                                                    if (!empty($it->opcion_id) || (!empty($it->opcion) && !empty($it->opcion->texto)) || !empty($it->texto)) {
+                                                    if (!empty($it->texto_respuesta) && trim($it->texto_respuesta) !== '') {
                                                         $totalOpciones++;
+                                                        continue;
+                                                    }
+                                                    if (!empty($it->valor_numerico)) {
+                                                        $totalOpciones++;
+                                                        continue;
+                                                    }
+                                                    if (!empty($it->opcion_id) || (!empty($it->opcion) && !empty($it->opcion->texto))) {
+                                                        $totalOpciones++;
+                                                        continue;
+                                                    }
+                                                    if (!empty($it->valor_fecha) || !empty($it->valor_hora)) {
+                                                        $totalOpciones++;
+                                                        continue;
                                                     }
                                                 }
                                             }
                                         }
                                     @endphp
-                                    <div class="text-sm text-gray-500">Total respuestas: <span class="font-semibold text-gray-700">{{ $totalOpciones }}</span></div>
+
+                                    Total respuestas: <span class="font-semibold text-gray-700">{{ $totalOpciones }}</span>
                                 </div>
+
                             </div>
 
                             <div class="mt-4">
@@ -88,7 +103,9 @@
                                 @if (!empty($estadisticas[$pregunta->id]) && is_array($estadisticas[$pregunta->id]) && count($estadisticas[$pregunta->id]) > 0)
                                     @php
                                         $total = 0;
-                                        foreach ($estadisticas[$pregunta->id] as $d) { $total += isset($d['conteo']) ? (int)$d['conteo'] : 0; }
+                                        foreach ($estadisticas[$pregunta->id] as $d) {
+                                            $total += isset($d['conteo']) ? (int)$d['conteo'] : 0;
+                                        }
                                     @endphp
 
                                     <ul class="space-y-3">
@@ -113,100 +130,247 @@
                                         @endforeach
                                     </ul>
 
-                                {{-- Preguntas tipo opción pero sin estadisticas pre-calculadas: calcular conteos --}}
-                                @elseif(in_array($tipo, ['opcion_simple','opcion_multiple','casillas']))
+                                {{-- Preguntas tipo escala lineal --}}
+                                @elseif($pregunta->tipo === 'escala_lineal')
                                     @php
                                         $conteos = [];
                                         $totalCalc = 0;
+
+                                        // Inicializar todas las opciones de la escala
+                                        for ($i = $pregunta->escala_min; $i <= $pregunta->escala_max; $i++) {
+                                            $conteos[$i] = ['label' => $i, 'count' => 0];
+                                        }
+
+                                        // Contar respuestas
                                         foreach ($formulario->respuestas as $r) {
                                             $ri = $r->respuestasIndividuales ?? collect();
                                             if (!is_a($ri, 'Illuminate\\Support\\Collection')) $ri = collect($ri);
                                             $riFor = $ri->where('pregunta_id', $pregunta->id);
                                             foreach ($riFor as $it) {
-                                                if (!empty($it->opcion_id)) {
-                                                    $key = 'id_'.$it->opcion_id;
-                                                    $label = $it->opcion->texto ?? ('Opción '.$it->opcion_id);
-                                                    $conteos[$key]['label'] = $label;
-                                                    $conteos[$key]['count'] = ($conteos[$key]['count'] ?? 0) + 1;
-                                                    $totalCalc++;
-                                                } elseif (!empty($it->opcion) && !empty($it->opcion->texto)) {
-                                                    $label = $it->opcion->texto;
-                                                    $key = 'txt_'.md5($label);
-                                                    $conteos[$key]['label'] = $label;
-                                                    $conteos[$key]['count'] = ($conteos[$key]['count'] ?? 0) + 1;
-                                                    $totalCalc++;
-                                                } elseif (!empty($it->texto)) {
-                                                    $label = $it->texto;
-                                                    $key = 'txt_'.md5($label);
-                                                    $conteos[$key]['label'] = $label;
-                                                    $conteos[$key]['count'] = ($conteos[$key]['count'] ?? 0) + 1;
+                                                if (!empty($it->valor_numerico)) {
+                                                    $val = (int)$it->valor_numerico;
+                                                    if (isset($conteos[$val])) {
+                                                        $conteos[$val]['count']++;
+                                                        $totalCalc++;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    @endphp
+
+                                    <ul class="space-y-3">
+                                        @foreach ($conteos as $c)
+                                            @php $pct = $totalCalc > 0 ? round(($c['count'] / $totalCalc) * 100, 1) : 0; @endphp
+                                            <li class="flex items-center justify-between gap-4">
+                                                <div class="w-3/5">
+                                                    <div class="text-sm text-gray-700 font-medium">
+                                                        {{ $c['label'] }}
+                                                        @if($c['label'] == $pregunta->escala_min && $pregunta->etiqueta_inicial)
+                                                            ({{ $pregunta->etiqueta_inicial }})
+                                                        @elseif($c['label'] == $pregunta->escala_max && $pregunta->etiqueta_final)
+                                                            ({{ $pregunta->etiqueta_final }})
+                                                        @endif
+                                                    </div>
+                                                    <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div class="h-2 bg-green-500 rounded-full" style="width: {{ $pct }}%"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="w-2/5 text-right">
+                                                    <div class="text-sm text-gray-600">{{ $c['count'] }} respuestas</div>
+                                                    <div class="text-xs text-gray-400">{{ $pct }}%</div>
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+
+                                {{-- Preguntas tipo opción sin estadísticas pre-calculadas --}}
+                                @elseif(in_array($pregunta->tipo, ['opcion_simple','opcion_multiple','casillas']))
+                                    @php
+                                        $conteos = [];
+                                        $totalCalc = 0;
+
+                                        // Inicializar todas las opciones de la pregunta con count = 0
+                                        foreach ($pregunta->opciones as $opcion) {
+                                            $conteos[$opcion->id] = ['label' => $opcion->texto, 'count' => 0];
+                                        }
+
+                                        // Contar respuestas
+                                        foreach ($formulario->respuestas as $r) {
+                                            $ri = $r->respuestasIndividuales ?? collect();
+                                            if (!is_a($ri, 'Illuminate\\Support\\Collection')) $ri = collect($ri);
+                                            $riFor = $ri->where('pregunta_id', $pregunta->id);
+                                            foreach ($riFor as $it) {
+                                                if (!empty($it->opcion_id) && isset($conteos[$it->opcion_id])) {
+                                                    $conteos[$it->opcion_id]['count']++;
                                                     $totalCalc++;
                                                 }
                                             }
                                         }
                                     @endphp
 
-                                    @if(count($conteos) > 0)
-                                        <ul class="space-y-3">
-                                            @foreach ($conteos as $c)
-                                                @php $pct = $totalCalc > 0 ? round(($c['count'] / $totalCalc) * 100, 1) : 0; @endphp
-                                                <li class="flex items-center justify-between gap-4">
-                                                    <div class="w-3/5">
-                                                        <div class="text-sm text-gray-700 font-medium">{{ $c['label'] }}</div>
-                                                        <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                            <div class="h-2 bg-green-500 rounded-full" style="width: {{ $pct }}%"></div>
-                                                        </div>
+                                    <ul class="space-y-3">
+                                        @foreach ($conteos as $c)
+                                            @php $pct = $totalCalc > 0 ? round(($c['count'] / $totalCalc) * 100, 1) : 0; @endphp
+                                            <li class="flex items-center justify-between gap-4">
+                                                <div class="w-3/5">
+                                                    <div class="text-sm text-gray-700 font-medium">{{ $c['label'] }}</div>
+                                                    <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div class="h-2 bg-green-500 rounded-full" style="width: {{ $pct }}%"></div>
                                                     </div>
-                                                    <div class="w-2/5 text-right">
-                                                        <div class="text-sm text-gray-600">{{ $c['count'] }} respuestas</div>
-                                                        <div class="text-xs text-gray-400">{{ $pct }}%</div>
-                                                    </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @else
-                                        <div class="text-sm text-gray-500 ml-8">No hay respuestas registradas para esta pregunta.</div>
-                                    @endif
+                                                </div>
+                                                <div class="w-2/5 text-right">
+                                                    <div class="text-sm text-gray-600">{{ $c['count'] }} respuestas</div>
+                                                    <div class="text-xs text-gray-400">{{ $pct }}%</div>
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
 
-                                {{-- Preguntas abiertas (texto) --}}
-                                @else
+                               {{-- Preguntas abiertas (texto) --}}
+                                @elseif($pregunta->tipo === 'texto_corto' || $pregunta->tipo === 'parrafo')
                                     @php
                                         $countOpen = 0;
-                                        $examples = [];
                                         foreach ($formulario->respuestas as $r) {
                                             $ri = $r->respuestasIndividuales ?? collect();
                                             if (!is_a($ri, 'Illuminate\\Support\\Collection')) $ri = collect($ri);
                                             $riFor = $ri->where('pregunta_id', $pregunta->id);
                                             foreach ($riFor as $it) {
-                                                if (!empty($it->texto) && trim($it->texto) !== '') {
+                                                if (!empty($it->texto_respuesta) && trim($it->texto_respuesta) !== '') {
                                                     $countOpen++;
-                                                    if (count($examples) < 5) $examples[] = trim($it->texto);
                                                 }
                                             }
                                         }
                                     @endphp
 
                                     <div class="ml-6 text-gray-700">
-                                        <div class="text-sm">Respuestas recibidas: <span class="font-semibold text-gray-800">{{ $countOpen }}</span></div>
-                                        @if(count($examples) > 0)
-                                            <div class="mt-3">
-                                                <div class="text-sm text-gray-600 font-medium">Ejemplos</div>
-                                                <ul class="list-disc ml-5 mt-2 text-sm text-gray-600 space-y-1">
-                                                    @foreach($examples as $ex) <li>{{ $ex }}</li> @endforeach
-                                                </ul>
-                                            </div>
-                                        @endif
+                                        <div class="text-sm">
+                                            Respuestas recibidas:
+                                            <span class="font-semibold text-gray-800">{{ $countOpen }}</span>
+                                        </div>
                                     </div>
-                                @endif
-                            </div>
-                        </div>
 
-                        @php $preguntaIndex++; @endphp
-                    @endforeach
+
+                                    
+{{-- Preguntas tipo cuadrícula de opciones / casillas --}}
+@elseif(in_array($pregunta->tipo, ['cuadricula_opciones','cuadricula_casillas']))
+    @php
+        $conteos = [];
+
+        // Obtener filas y columnas en orden correcto
+        $filas = $pregunta->filas->sortBy('fila')->values();
+        $columnas = $pregunta->columnas->sortBy('columna')->values();
+
+        // Inicializar combinaciones fila-columna
+        foreach ($filas as $fila) {
+            foreach ($columnas as $columna) {
+                $key = $fila->id . '_' . $columna->id;
+                $conteos[$key] = [
+                    'fila' => $fila->texto,
+                    'columna' => $columna->texto,
+                    'count' => 0
+                ];
+            }
+        }
+
+        // Contar respuestas (usando la misma lógica que tu total)
+        foreach ($formulario->respuestas as $r) {
+
+            $ri = $r->respuestasIndividuales ?? collect();
+            if (!is_a($ri, 'Illuminate\\Support\\Collection')) {
+                $ri = collect($ri);
+            }
+
+            // Solo respuestas de esta pregunta
+            $riFor = $ri->where('pregunta_id', $pregunta->id)->values();
+
+            foreach ($riFor as $index => $it) {
+
+                if (empty($it->opcion_id)) continue;
+
+                // La columna elegida
+                $columnaElegida = $columnas->firstWhere('id', $it->opcion_id);
+                if (!$columnaElegida) continue;
+
+                // Reconstruir fila por posición
+                if (!isset($filas[$index])) continue;
+
+                $fila = $filas[$index];
+
+                $key = $fila->id . '_' . $columnaElegida->id;
+
+                if (isset($conteos[$key])) {
+                    $conteos[$key]['count']++;
+                }
+            }
+        }
+    @endphp
+
+    <div class="space-y-4">
+        @foreach ($filas as $fila)
+            @php
+                $totalFila = 0;
+                foreach ($columnas as $columna) {
+                    $key = $fila->id . '_' . $columna->id;
+                    $totalFila += $conteos[$key]['count'];
+                }
+            @endphp
+            <div>
+                <div class="text-sm font-semibold text-gray-800 mb-2">
+                    {{ $fila->texto }}
                 </div>
-            </section>
+                <ul class="space-y-2">
+                    @foreach ($columnas as $columna)
+                        @php
+                            $key = $fila->id . '_' . $columna->id;
+                            $c = $conteos[$key];
+                            $pct = $totalFila > 0 
+                                ? round(($c['count'] / $totalFila) * 100, 1) 
+                                : 0;
+                        @endphp
+                        <li class="flex items-center justify-between gap-4">
+                            <div class="w-3/5">
+                                <div class="text-sm text-gray-700">
+                                    {{ $columna->texto }}
+                                </div>
+                                <div class="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-2 bg-green-500 rounded-full"
+                                         style="width: {{ $pct }}%">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-2/5 text-right">
+                                <div class="text-sm text-gray-600">
+                                    {{ $c['count'] }} respuestas
+                                </div>
+                                <div class="text-xs text-gray-400">
+                                    {{ $pct }}%
+                                </div>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         @endforeach
     </div>
+@endif
+
+
+</div>
+</div>
+
+@php $preguntaIndex++; @endphp
+@endforeach
+</div>
+</section>
+@endforeach
+</div>
+
+
+
+
+    {{--________________________________________________________________________________________________________________________________--}}
+    {{---------------------------------------------- SECCION TABLA DE RESPUESTAS ---------------------------------------------------------}}
+
 
     {{-- Respuestas individuales (tabla compacta) --}}
     <div class="mt-8">
