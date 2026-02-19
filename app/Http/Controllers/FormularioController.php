@@ -437,55 +437,172 @@ public function concentrarRespuestas($id)
         'respuestas.respuestas_individuales.opcion'
     ])->findOrFail($id);
 
-    // Contadores por opción
-    $estadisticas = [];
-    foreach ($formulario->secciones as $seccion) {
-        foreach ($seccion->preguntas as $pregunta) {
-            $estadisticas[$pregunta->id] = $pregunta->opciones->map(function ($opcion) use ($pregunta) {
-                $conteo = DB::table('respuestas_individuales')
+    $spreadsheet = new Spreadsheet();
+
+// ============================
+// Hoja 1: Concentrado por pregunta
+// ============================
+$sheet1 = $spreadsheet->getActiveSheet();
+$sheet1->setTitle('Concentrado');
+
+$row = 1;
+foreach ($formulario->secciones as $seccion) {
+    // Título de sección
+    $sheet1->setCellValue("A{$row}", "Sección: " . $seccion->titulo);
+    $sheet1->getStyle("A{$row}")->getFont()->setBold(true);
+    $row++;
+
+    foreach ($seccion->preguntas as $pregunta) {
+        // Encabezado de pregunta
+        $sheet1->setCellValue("A{$row}", "Pregunta: " . $pregunta->texto);
+        $sheet1->getStyle("A{$row}")->getFont()->setBold(true);
+        $row++;
+
+        $sheet1->setCellValue("A{$row}", "Tipo: " . $pregunta->tipo);
+        $row++;
+
+        // Total de respuestas
+        $totalRespuestas = $formulario->respuestas
+            ->flatMap->respuestas_individuales
+            ->where('pregunta_id', $pregunta->id)
+            ->count();
+
+        $sheet1->setCellValue("A{$row}", "Total respuestas: {$totalRespuestas}");
+        $row++;
+
+        // --- Caso cuadrícula ---
+        if (in_array($pregunta->tipo, ['cuadricula_opciones','cuadricula_casillas'])) {
+            $filas = $pregunta->filas->sortBy('fila')->values();
+            $columnas = $pregunta->columnas->sortBy('columna')->values();
+
+            // Inicializar mapa fila-columna
+            $conteos = [];
+            foreach ($filas as $fila) {
+                foreach ($columnas as $columna) {
+                    $key = $fila->id . '_' . $columna->id;
+                    $conteos[$key] = [
+                        'fila' => $fila->texto,
+                        'columna' => $columna->texto,
+                        'count' => 0
+                    ];
+                }
+            }
+
+            // Contar respuestas
+            foreach ($formulario->respuestas as $r) {
+                $ri = collect($r->respuestas_individuales ?? []);
+                $riFor = $ri->where('pregunta_id', $pregunta->id)->values();
+
+                foreach ($riFor as $index => $it) {
+                    if (empty($it->opcion_id)) continue;
+
+                    // Buscar la opción seleccionada
+                    $opcionElegida = $pregunta->opciones->firstWhere('id', $it->opcion_id);
+                    if (!$opcionElegida || empty($opcionElegida->columna)) continue;
+
+                    // Reconstruir fila por posición
+                    if (!isset($filas[$index])) continue;
+                    $fila = $filas[$index];
+
+                    $key = $fila->id . '_' . $opcionElegida->id;
+                    if (isset($conteos[$key])) {
+                        $conteos[$key]['count']++;
+                    }
+                }
+            }
+
+            // Imprimir resultados
+            foreach ($filas as $fila) {
+                $sheet1->setCellValue("A{$row}", "Fila: " . $fila->texto);
+                $sheet1->getStyle("A{$row}")->getFont()->setBold(true);
+                $row++;
+
+                $totalFila = 0;
+                foreach ($columnas as $columna) {
+                    $key = $fila->id . '_' . $columna->id;
+                    $totalFila += $conteos[$key]['count'];
+                }
+
+                foreach ($columnas as $columna) {
+                    $key = $fila->id . '_' . $columna->id;
+                    $c = $conteos[$key];
+                    $pct = $totalFila > 0 ? round(($c['count'] / $totalFila) * 100, 1) : 0;
+
+                    $sheet1->setCellValue("A{$row}", "Columna: " . $columna->texto);
+                    $sheet1->setCellValue("B{$row}", "{$c['count']} respuestas");
+                    $sheet1->setCellValue("C{$row}", "{$pct}%");
+                    $row++;
+                }
+
+                $row++; // espacio entre filas
+            }
+        }
+        // --- Caso opciones simples ---
+        elseif ($pregunta->opciones->count() > 0) {
+            foreach ($pregunta->opciones as $opcion) {
+                $conteo = $formulario->respuestas
+                    ->flatMap->respuestas_individuales
                     ->where('pregunta_id', $pregunta->id)
                     ->where('opcion_id', $opcion->id)
                     ->count();
 
-                return [
-                    'opcion' => $opcion->texto,
-                    'conteo' => $conteo,
-                ];
-            });
+                $porcentaje = $totalRespuestas > 0
+                    ? round(($conteo / $totalRespuestas) * 100, 1)
+                    : 0;
+
+                $sheet1->setCellValue("A{$row}", $opcion->texto);
+                $sheet1->setCellValue("B{$row}", "{$conteo} respuestas");
+                $sheet1->setCellValue("C{$row}", "{$porcentaje}%");
+                $row++;
+            }
         }
+        // --- Caso preguntas abiertas ---
+        else {
+            $respuestasTexto = $formulario->respuestas
+                ->flatMap->respuestas_individuales
+                ->where('pregunta_id', $pregunta->id);
+
+            foreach ($respuestasTexto as $ri) {
+                $sheet1->setCellValue("A{$row}", $ri->texto ?? 'Sin respuesta');
+                $row++;
+            }
+        }
+
+        $row++; // Espacio entre preguntas
     }
 
-    // Crear Excel
-    $spreadsheet = new Spreadsheet();
+    $row++; // Espacio entre secciones
+}
 
-    // Hoja 1: Respuestas por persona (una fila = una persona)
-    $sheet1 = $spreadsheet->getActiveSheet();
-    $sheet1->setTitle('Respuestas');
+    // ============================
+    // Hoja 2: Respuestas por persona
+    // ============================
+    $sheet2 = $spreadsheet->createSheet();
+    $sheet2->setTitle('Respuestas');
 
     // Encabezados fijos
-    $sheet1->setCellValue('A1', 'ID');
-    $sheet1->setCellValue('B1', 'Usuario');
-    $sheet1->setCellValue('C1', 'Correo');
-    $sheet1->setCellValue('D1', 'Departamento');
-    $sheet1->setCellValue('E1', 'Fecha');
+    $sheet2->setCellValue('A1', 'ID');
+    $sheet2->setCellValue('B1', 'Usuario');
+    $sheet2->setCellValue('C1', 'Correo');
+    $sheet2->setCellValue('D1', 'Departamento');
+    $sheet2->setCellValue('E1', 'Fecha');
 
-    // Encabezados dinámicos: cada pregunta es una columna
+    // Encabezados dinámicos
     $col = 'F';
-    $preguntasMap = []; // Mapear pregunta_id a columna
+    $preguntasMap = [];
     foreach ($formulario->secciones as $seccion) {
         foreach ($seccion->preguntas as $pregunta) {
-            $sheet1->setCellValue("{$col}1", $pregunta->texto);
+            $sheet2->setCellValue("{$col}1", $pregunta->texto);
             $preguntasMap[$pregunta->id] = $col;
             $col++;
         }
     }
 
-    // Llenar filas: cada persona = una fila
+    // Llenar filas
     $row = 2;
     $contadorAnonimo = 1;
     foreach ($formulario->respuestas as $respuesta) {
-        // Usuario o Persona genérica
-        if ($formulario->permitir_anonimo) {
+        if ($respuesta->usuario_id === null) {
             $usuario = 'Persona ' . $contadorAnonimo++;
             $correo = 'N/A';
             $departamento = 'N/A';
@@ -495,76 +612,27 @@ public function concentrarRespuestas($id)
             $departamento = $respuesta->usuario->departamento ?? 'N/A';
         }
 
-        // Datos fijos
-        $sheet1->setCellValue("A{$row}", $respuesta->id);
-        $sheet1->setCellValue("B{$row}", $usuario);
-        $sheet1->setCellValue("C{$row}", $correo);
-        $sheet1->setCellValue("D{$row}", $departamento);
-        $sheet1->setCellValue("E{$row}", $respuesta->created_at);
+        $sheet2->setCellValue("A{$row}", $respuesta->id);
+        $sheet2->setCellValue("B{$row}", $usuario);
+        $sheet2->setCellValue("C{$row}", $correo);
+        $sheet2->setCellValue("D{$row}", $departamento);
+        //$sheet2->setCellValue("E{$row}", $respuesta->created_at->format('Y-m-d H:i'));
+        $fecha = $respuesta->created_at ? $respuesta->created_at->format('Y-m-d H:i') : 'N/A';
+        $sheet2->setCellValue("E{$row}", $fecha);
 
-        // Respuestas por pregunta
         foreach ($respuesta->respuestas_individuales as $ri) {
             $col = $preguntasMap[$ri->pregunta->id] ?? null;
             if ($col) {
                 $valor = $ri->texto ?? $ri->opcion->texto ?? 'Sin respuesta';
-
-                // Si ya hay algo en la celda (casillas múltiples, cuadrículas), concatenar
-                $celdaActual = $sheet1->getCell("{$col}{$row}")->getValue();
+                $celdaActual = $sheet2->getCell("{$col}{$row}")->getValue();
                 if (!empty($celdaActual)) {
                     $valor = $celdaActual . '; ' . $valor;
                 }
-
-                $sheet1->setCellValue("{$col}{$row}", $valor);
+                $sheet2->setCellValue("{$col}{$row}", $valor);
             }
         }
 
         $row++;
-    }
-
-    // Estilos encabezados hoja 1
-    $lastCol = chr(ord('E') + count($preguntasMap));
-    $sheet1->getStyle("A1:{$lastCol}1")->applyFromArray([
-        'font' => ['bold' => true],
-        'fill' => [
-            'fillType' => Fill::FILL_SOLID,
-            'startColor' => ['rgb' => 'DDDDDD']
-        ],
-        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-    ]);
-    foreach (range('A', $lastCol) as $col) {
-        $sheet1->getColumnDimension($col)->setAutoSize(true);
-    }
-
-    // Hoja 2: Estadísticas (igual que ya tienes)
-    $sheet2 = $spreadsheet->createSheet();
-    $sheet2->setTitle('Estadísticas');
-    $sheet2->setCellValue('A1', 'Pregunta');
-    $sheet2->setCellValue('B1', 'Opción');
-    $sheet2->setCellValue('C1', 'Conteo');
-
-    $row = 2;
-    foreach ($formulario->secciones as $seccion) {
-        foreach ($seccion->preguntas as $pregunta) {
-            foreach ($estadisticas[$pregunta->id] as $dato) {
-                $sheet2->setCellValue("A{$row}", $pregunta->texto);
-                $sheet2->setCellValue("B{$row}", $dato['opcion']);
-                $sheet2->setCellValue("C{$row}", $dato['conteo']);
-                $row++;
-            }
-        }
-    }
-
-    // Estilos encabezados hoja 2
-    $sheet2->getStyle('A1:C1')->applyFromArray([
-        'font' => ['bold' => true],
-        'fill' => [
-            'fillType' => Fill::FILL_SOLID,
-            'startColor' => ['rgb' => 'DDDDDD']
-        ],
-        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-    ]);
-    foreach (range('A', 'C') as $col) {
-        $sheet2->getColumnDimension($col)->setAutoSize(true);
     }
 
     // Descargar Excel

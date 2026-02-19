@@ -251,119 +251,122 @@
 
 
                                     
-{{-- Preguntas tipo cuadrícula de opciones / casillas --}}
-@elseif(in_array($pregunta->tipo, ['cuadricula_opciones','cuadricula_casillas']))
-    @php
-        $conteos = [];
+                                    {{-- Preguntas tipo cuadrícula de opciones / casillas --}}
+                                    @elseif(in_array($pregunta->tipo, ['cuadricula_opciones','cuadricula_casillas']))
+                                        @php
+                                            $conteos = [];
 
-        // Obtener filas y columnas en orden correcto
-        $filas = $pregunta->filas->sortBy('fila')->values();
-        $columnas = $pregunta->columnas->sortBy('columna')->values();
+                                            // Obtener filas y columnas en orden correcto
+                                            $filas = $pregunta->filas->sortBy('fila')->values();
+                                            $columnas = $pregunta->columnas->sortBy('columna')->values();
 
-        // Inicializar combinaciones fila-columna
-        foreach ($filas as $fila) {
-            foreach ($columnas as $columna) {
-                $key = $fila->id . '_' . $columna->id;
-                $conteos[$key] = [
-                    'fila' => $fila->texto,
-                    'columna' => $columna->texto,
-                    'count' => 0
-                ];
-            }
-        }
+                                            // Inicializar combinaciones fila-columna
+                                            foreach ($filas as $fila) {
+                                                foreach ($columnas as $columna) {
+                                                    $key = $fila->id . '_' . $columna->id;
+                                                    $conteos[$key] = [
+                                                        'fila' => $fila->texto,
+                                                        'columna' => $columna->texto,
+                                                        'count' => 0
+                                                    ];
+                                                }
+                                            }
 
-        // Contar respuestas (usando la misma lógica que tu total)
-        foreach ($formulario->respuestas as $r) {
+                                            // Contar respuestas (usando la misma lógica que tu total)
+                                            foreach ($formulario->respuestas as $r) {
 
-            $ri = $r->respuestasIndividuales ?? collect();
-            if (!is_a($ri, 'Illuminate\\Support\\Collection')) {
-                $ri = collect($ri);
-            }
+                                                $ri = $r->respuestasIndividuales ?? collect();
+                                                if (!is_a($ri, 'Illuminate\\Support\\Collection')) {
+                                                    $ri = collect($ri);
+                                                }
 
-            // Solo respuestas de esta pregunta
-            $riFor = $ri->where('pregunta_id', $pregunta->id)->values();
+                                                // Solo respuestas de esta pregunta
+                                                $riFor = $ri->where('pregunta_id', $pregunta->id)->values();
 
-            foreach ($riFor as $index => $it) {
+                                                foreach ($riFor as $index => $it) {
 
-                if (empty($it->opcion_id)) continue;
+                                                    if (empty($it->opcion_id)) continue;
 
-                // La columna elegida
-                $columnaElegida = $columnas->firstWhere('id', $it->opcion_id);
-                if (!$columnaElegida) continue;
+                                                    // La columna elegida
+                                                    $columnaElegida = $columnas->firstWhere('id', $it->opcion_id);
+                                                    if (!$columnaElegida) continue;
 
-                // Reconstruir fila por posición
-                if (!isset($filas[$index])) continue;
+                                                    // Reconstruir fila por posición
+                                                    if (!isset($filas[$index])) continue;
 
-                $fila = $filas[$index];
+                                                    $fila = $filas[$index];
 
-                $key = $fila->id . '_' . $columnaElegida->id;
+                                                    $key = $fila->id . '_' . $columnaElegida->id;
 
-                if (isset($conteos[$key])) {
-                    $conteos[$key]['count']++;
-                }
-            }
-        }
-    @endphp
+                                                    if (isset($conteos[$key])) {
+                                                        $conteos[$key]['count']++;
+                                                    }
+                                                }
+                                            }
+                                        @endphp
 
-    <div class="space-y-4">
-        @foreach ($filas as $fila)
-            @php
-                $totalFila = 0;
-                foreach ($columnas as $columna) {
-                    $key = $fila->id . '_' . $columna->id;
-                    $totalFila += $conteos[$key]['count'];
-                }
-            @endphp
-            <div>
-                <div class="text-sm font-semibold text-gray-800 mb-2">
-                    {{ $fila->texto }}
-                </div>
-                <ul class="space-y-2">
-                    @foreach ($columnas as $columna)
-                        @php
-                            $key = $fila->id . '_' . $columna->id;
-                            $c = $conteos[$key];
-                            $pct = $totalFila > 0 
-                                ? round(($c['count'] / $totalFila) * 100, 1) 
-                                : 0;
+                                        <div class="space-y-4">
+                                            @foreach ($filas as $fila)
+                                                @php
+                                                    $totalFila = 0;
+                                                    foreach ($columnas as $columna) {
+                                                        $key = $fila->id . '_' . $columna->id;
+                                                        $totalFila += $conteos[$key]['count'];
+                                                    }
+                                                @endphp
+                                                <div>
+                                                    <div class="text-sm font-semibold text-gray-800 mb-2">
+                                                        {{ $fila->texto }}
+                                                    </div>
+                                                    <ul class="space-y-2">
+                                                        @foreach ($columnas as $columna)
+                                                            @php
+                                                                $key = $fila->id . '_' . $columna->id;
+                                                                $c = $conteos[$key];
+                                                                $pct = $totalFila > 0 
+                                                                    ? round(($c['count'] / $totalFila) * 100, 1) 
+                                                                    : 0;
+                                                            @endphp
+                                                            <li class="flex items-center justify-between gap-4">
+                                                                <div class="w-3/5">
+                                                                    <div class="text-sm text-gray-700">
+                                                                        {{ $columna->texto }}
+                                                                    </div>
+                                                                    <div class="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                        <div class="h-2 bg-green-500 rounded-full"
+                                                                            style="width: {{ $pct }}%">
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="w-2/5 text-right">
+                                                                    <div class="text-sm text-gray-600">
+                                                                        {{ $c['count'] }} respuestas
+                                                                    </div>
+                                                                    <div class="text-xs text-gray-400">
+                                                                        {{ $pct }}%
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+
+                            </div>
+                        </div>
+
+                        @php 
+                            $preguntaIndex++; 
                         @endphp
-                        <li class="flex items-center justify-between gap-4">
-                            <div class="w-3/5">
-                                <div class="text-sm text-gray-700">
-                                    {{ $columna->texto }}
-                                </div>
-                                <div class="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div class="h-2 bg-green-500 rounded-full"
-                                         style="width: {{ $pct }}%">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="w-2/5 text-right">
-                                <div class="text-sm text-gray-600">
-                                    {{ $c['count'] }} respuestas
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    {{ $pct }}%
-                                </div>
-                            </div>
-                        </li>
+                        
                     @endforeach
-                </ul>
-            </div>
+                </div>
+            </section>
         @endforeach
     </div>
-@endif
-
-
-</div>
-</div>
-
-@php $preguntaIndex++; @endphp
-@endforeach
-</div>
-</section>
-@endforeach
-</div>
 
 
 
