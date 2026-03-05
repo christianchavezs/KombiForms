@@ -34,7 +34,7 @@
 
             <tbody class="divide-y divide-gray-100">
                 @forelse ($formularios as $form)
-                <tr class="transition transform hover:scale-[1.02] hover:bg-green-50"
+                <tr class="transition transform hover:scale-[1.015] hover:bg-green-50"
     x-data="{
         fechaInicio: '{{ $form->fecha_inicio }}',
         fechaFin: '{{ $form->fecha_fin }}',
@@ -135,15 +135,14 @@
                             </button>
                         </form>
 
+                       
                         {{-- Configuración --}}
                         <a href="{{ route('formularios.configuracion', ['id' => $form->id, 'from' => 'index']) }}"
-                           class="inline-flex items-center justify-center w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full shadow transition"
-                           title="Configuración del formulario">
-                            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9.75 3a.75.75 0 01.75-.75h3a.75.75 0 01.75.75v1.5a6.75 6.75 0 012.25 1.3l1.06-.61a.75.75 0 011.02.27l1.5 2.6a.75.75 0 01-.27 1.02l-1.06.61c.17.46.3.95.37 1.46h1.5a.75.75 0 01.75.75v3a.75.75 0 01-.75.75h-1.5a6.75 6.75 0 01-.37 1.46l1.06.61a.75.75 0 01.27 1.02l-1.5 2.6a.75.75 0 01-1.02.27l-1.06-.61a6.75 6.75 0 01-2.25 1.3v1.5a.75.75 0 01-.75.75h-3a.75.75 0 01-.75-.75v-1.5a6.75 6.75 0 01-2.25-1.3l-1.06.61a.75.75 0 01-1.02-.27l-1.5-2.6a.75.75 0 01.27-1.02l1.06-.61a6.75 6.75 0 01-.37-1.46H3.75a.75.75 0 01-.75-.75v-3a.75.75 0 01.75-.75h1.5c.07-.51.2-1 .37-1.46l-1.06-.61a.75.75 0 01-.27-1.02l1.5-2.6a.75.75 0 011.02-.27l1.06.61A6.75 6.75 0 018.25 4.5V3z" />
-                                <circle cx="12" cy="12" r="3" />
-                            </svg>
+                        class="inline-flex items-center justify-center w-9 h-9 bg-gray-200 hover:bg-gray-300 rounded-full shadow transition"
+                        title="Configuración del formulario">
+                            <img src="https://cdn-icons-png.freepik.com/256/889/889717.png?semt=ais_white_label"
+                                alt="Configuración"
+                                class="w-5 h-5" />
                         </a>
                     </td>
                 </tr>

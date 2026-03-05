@@ -475,35 +475,24 @@ foreach ($formulario->secciones as $seccion) {
             $filas = $pregunta->filas->sortBy('fila')->values();
             $columnas = $pregunta->columnas->sortBy('columna')->values();
 
-            // Inicializar mapa fila-columna
             $conteos = [];
             foreach ($filas as $fila) {
                 foreach ($columnas as $columna) {
                     $key = $fila->id . '_' . $columna->id;
-                    $conteos[$key] = [
-                        'fila' => $fila->texto,
-                        'columna' => $columna->texto,
-                        'count' => 0
-                    ];
+                    $conteos[$key] = ['fila' => $fila->texto, 'columna' => $columna->texto, 'count' => 0];
                 }
             }
 
-            // Contar respuestas
             foreach ($formulario->respuestas as $r) {
                 $ri = collect($r->respuestas_individuales ?? []);
                 $riFor = $ri->where('pregunta_id', $pregunta->id)->values();
 
                 foreach ($riFor as $index => $it) {
                     if (empty($it->opcion_id)) continue;
-
-                    // Buscar la opción seleccionada
                     $opcionElegida = $pregunta->opciones->firstWhere('id', $it->opcion_id);
-                    if (!$opcionElegida || empty($opcionElegida->columna)) continue;
-
-                    // Reconstruir fila por posición
+                    if (!$opcionElegida) continue;
                     if (!isset($filas[$index])) continue;
                     $fila = $filas[$index];
-
                     $key = $fila->id . '_' . $opcionElegida->id;
                     if (isset($conteos[$key])) {
                         $conteos[$key]['count']++;
@@ -511,7 +500,6 @@ foreach ($formulario->secciones as $seccion) {
                 }
             }
 
-            // Imprimir resultados
             foreach ($filas as $fila) {
                 $sheet1->setCellValue("A{$row}", "Fila: " . $fila->texto);
                 $sheet1->getStyle("A{$row}")->getFont()->setBold(true);
@@ -534,7 +522,39 @@ foreach ($formulario->secciones as $seccion) {
                     $row++;
                 }
 
-                $row++; // espacio entre filas
+                $row++;
+            }
+        }
+        // --- Caso escala lineal ---
+        elseif ($pregunta->tipo === 'escala_lineal') {
+            $min = $pregunta->escala_min;
+            $max = $pregunta->escala_max;
+
+            for ($i = $min; $i <= $max; $i++) {
+                // Contar respuestas usando valor_numerico
+                $conteo = $formulario->respuestas
+                    ->flatMap->respuestas_individuales
+                    ->where('pregunta_id', $pregunta->id)
+                    ->where('valor_numerico', $i)
+                    ->count();
+
+                $porcentaje = $totalRespuestas > 0
+                    ? round(($conteo / $totalRespuestas) * 100, 1)
+                    : 0;
+
+                // Mostrar etiquetas inicial/final si existen
+                $etiqueta = '';
+                if ($i == $min && !empty($pregunta->etiqueta_inicial)) {
+                    $etiqueta = " ({$pregunta->etiqueta_inicial})";
+                }
+                if ($i == $max && !empty($pregunta->etiqueta_final)) {
+                    $etiqueta = " ({$pregunta->etiqueta_final})";
+                }
+
+                $sheet1->setCellValue("A{$row}", "{$i}{$etiqueta}");
+                $sheet1->setCellValue("B{$row}", "{$conteo} respuestas");
+                $sheet1->setCellValue("C{$row}", "{$porcentaje}%");
+                $row++;
             }
         }
         // --- Caso opciones simples ---
@@ -568,80 +588,112 @@ foreach ($formulario->secciones as $seccion) {
             }
         }
 
-        $row++; // Espacio entre preguntas
-    }
-
-    $row++; // Espacio entre secciones
-}
-
-    // ============================
-    // Hoja 2: Respuestas por persona
-    // ============================
-    $sheet2 = $spreadsheet->createSheet();
-    $sheet2->setTitle('Respuestas');
-
-    // Encabezados fijos
-    $sheet2->setCellValue('A1', 'ID');
-    $sheet2->setCellValue('B1', 'Usuario');
-    $sheet2->setCellValue('C1', 'Correo');
-    $sheet2->setCellValue('D1', 'Departamento');
-    $sheet2->setCellValue('E1', 'Fecha');
-
-    // Encabezados dinámicos
-    $col = 'F';
-    $preguntasMap = [];
-    foreach ($formulario->secciones as $seccion) {
-        foreach ($seccion->preguntas as $pregunta) {
-            $sheet2->setCellValue("{$col}1", $pregunta->texto);
-            $preguntasMap[$pregunta->id] = $col;
-            $col++;
-        }
-    }
-
-    // Llenar filas
-    $row = 2;
-    $contadorAnonimo = 1;
-    foreach ($formulario->respuestas as $respuesta) {
-        if ($respuesta->usuario_id === null) {
-            $usuario = 'Persona ' . $contadorAnonimo++;
-            $correo = 'N/A';
-            $departamento = 'N/A';
-        } else {
-            $usuario = $respuesta->usuario->name ?? 'Sin nombre';
-            $correo = $respuesta->usuario->email ?? 'N/A';
-            $departamento = $respuesta->usuario->departamento ?? 'N/A';
-        }
-
-        $sheet2->setCellValue("A{$row}", $respuesta->id);
-        $sheet2->setCellValue("B{$row}", $usuario);
-        $sheet2->setCellValue("C{$row}", $correo);
-        $sheet2->setCellValue("D{$row}", $departamento);
-        //$sheet2->setCellValue("E{$row}", $respuesta->created_at->format('Y-m-d H:i'));
-        $fecha = $respuesta->created_at ? $respuesta->created_at->format('Y-m-d H:i') : 'N/A';
-        $sheet2->setCellValue("E{$row}", $fecha);
-
-        foreach ($respuesta->respuestas_individuales as $ri) {
-            $col = $preguntasMap[$ri->pregunta->id] ?? null;
-            if ($col) {
-                $valor = $ri->texto ?? $ri->opcion->texto ?? 'Sin respuesta';
-                $celdaActual = $sheet2->getCell("{$col}{$row}")->getValue();
-                if (!empty($celdaActual)) {
-                    $valor = $celdaActual . '; ' . $valor;
-                }
-                $sheet2->setCellValue("{$col}{$row}", $valor);
-            }
-        }
-
         $row++;
     }
 
-    // Descargar Excel
-    $writer = new Xlsx($spreadsheet);
-    $filename = 'concentrado_respuestas.xlsx';
+    $row++;
+}
 
-    return response()->streamDownload(function() use ($writer) {
-        $writer->save('php://output');
-    }, $filename);
+ // ============================
+// Hoja 2: Respuestas por persona
+// ============================
+$sheet2 = $spreadsheet->createSheet();
+$sheet2->setTitle('Respuestas');
+
+// Encabezados fijos (sin Departamento)
+$sheet2->setCellValue('A1', 'ID');
+$sheet2->setCellValue('B1', 'Usuario');
+$sheet2->setCellValue('C1', 'Correo');
+$sheet2->setCellValue('D1', 'Fecha');
+
+// Encabezados dinámicos: cada pregunta es una columna
+$col = 'E';
+$preguntasMap = [];
+foreach ($formulario->secciones as $seccion) {
+    foreach ($seccion->preguntas as $pregunta) {
+        $sheet2->setCellValue("{$col}1", $pregunta->texto);
+        $preguntasMap[$pregunta->id] = $col;
+        $col++;
+    }
+}
+
+// Llenar filas: cada persona = una fila
+$row = 2;
+$contadorAnonimo = 1;
+foreach ($formulario->respuestas as $respuesta) {
+    if ($respuesta->usuario_id === null) {
+        $usuario = 'Persona ' . $contadorAnonimo++;
+        $correo = 'N/A';
+    } else {
+        $usuario = $respuesta->usuario->name ?? 'Sin nombre';
+        $correo = $respuesta->usuario->email ?? 'N/A';
+    }
+
+    $sheet2->setCellValue("A{$row}", $respuesta->id);
+    $sheet2->setCellValue("B{$row}", $usuario);
+    $sheet2->setCellValue("C{$row}", $correo);
+
+    // Usar la fecha de la columna enviado_en
+    $fecha = $respuesta->enviado_en ? \Carbon\Carbon::parse($respuesta->enviado_en)->format('d/m/Y H:i') : 'N/A';
+    $sheet2->setCellValue("D{$row}", $fecha);
+
+    // Recorremos todas las preguntas para mantener estructura compacta
+    foreach ($formulario->secciones as $seccion) {
+        foreach ($seccion->preguntas as $pregunta) {
+            $col = $preguntasMap[$pregunta->id] ?? null;
+            if ($col) {
+                $riFor = collect($respuesta->respuestas_individuales ?? [])
+                    ->where('pregunta_id', $pregunta->id);
+
+                $vals = [];
+                foreach ($riFor as $it) {
+                    // Pregunta abierta o casillas con texto
+                    if (!empty($it->texto_respuesta)) {
+                        $vals[] = $it->texto_respuesta;
+                        continue;
+                    }
+                    // Escala lineal
+                    if (!empty($it->valor_numerico)) {
+                        $vals[] = $it->valor_numerico;
+                        continue;
+                    }
+                    // Opción seleccionada
+                    if (!empty($it->opcion) && !empty($it->opcion->texto)) {
+                        $vals[] = $it->opcion->texto;
+                        continue;
+                    }
+                    // Fallback: opcion_id
+                    if (!empty($it->opcion_id)) {
+                        $vals[] = 'Opción #' . $it->opcion_id;
+                        continue;
+                    }
+                    // Fechas/horas si aplica
+                    if (!empty($it->valor_fecha)) {
+                        $vals[] = $it->valor_fecha;
+                        continue;
+                    }
+                    if (!empty($it->valor_hora)) {
+                        $vals[] = $it->valor_hora;
+                        continue;
+                    }
+                }
+
+                $display = count($vals) ? implode('; ', $vals) : 'Sin respuesta';
+                $sheet2->setCellValue("{$col}{$row}", $display);
+            }
+        }
+    }
+
+    $row++;
+}
+
+// Descargar Excel
+$writer = new Xlsx($spreadsheet);
+$filename = 'concentrado_respuestas.xlsx';
+
+return response()->streamDownload(function() use ($writer) {
+    $writer->save('php://output');
+}, $filename);
 }
 
 
