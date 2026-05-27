@@ -24,7 +24,8 @@ class Pregunta extends Model
         'escala_max',
         'etiqueta_inicial',
         'etiqueta_final',
-        'requiere_evaluador' // ← AGREGAR
+        'requiere_evaluador', // ← AGREGAR
+        'ponderacion',
     ];
 
     protected $casts = [

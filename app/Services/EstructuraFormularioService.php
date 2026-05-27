@@ -40,25 +40,30 @@ class EstructuraFormularioService
                 foreach ($dataSeccion['preguntas'] ?? [] as $ordenPregunta => $dataPregunta) {
 
                     // Guardamos la pregunta
-                    $pregunta = Pregunta::create([
-                        'seccion_id'  => $seccion->id,
-                        'tipo'        => $dataPregunta['tipo'] ?? null,
-                        'texto'       => $dataPregunta['texto'] ?? null,
-                       // 'obligatorio' => $dataPregunta['obligatorio'] ?? 0,
-                       'obligatorio' => isset($dataPregunta['obligatorio']) 
-                            ? (int) $dataPregunta['obligatorio'] 
-                            : 0, 
-                       'orden'       => $ordenPregunta + 1,
-                        'escala_min'  => $dataPregunta['escala_min'] ?? null,
-                        'escala_max'  => $dataPregunta['escala_max'] ?? null,
-                        'etiqueta_inicial' => $dataPregunta['etiqueta_inicial'] ?? null, 
-                        'etiqueta_final'   => $dataPregunta['etiqueta_final'] ?? null,   
+                   $pregunta = Pregunta::create([
+    'seccion_id'  => $seccion->id,
+    'tipo'        => $dataPregunta['tipo'] ?? null,
+    'texto'       => $dataPregunta['texto'] ?? null,
 
-                        'requiere_evaluador' => isset($dataPregunta['requiere_evaluador'])
+    'obligatorio' => isset($dataPregunta['obligatorio']) 
+        ? (int) $dataPregunta['obligatorio'] 
+        : 0,
+
+    'requiere_evaluador' => isset($dataPregunta['requiere_evaluador'])
         ? (int) $dataPregunta['requiere_evaluador']
         : 0,
 
-                    ]);
+    // 🔥 ESTE ERA EL QUE FALTABA
+    'ponderacion' => isset($dataPregunta['ponderacion'])
+        ? (float) $dataPregunta['ponderacion']
+        : 1.00,
+
+    'orden'       => $ordenPregunta + 1,
+    'escala_min'  => $dataPregunta['escala_min'] ?? null,
+    'escala_max'  => $dataPregunta['escala_max'] ?? null,
+    'etiqueta_inicial' => $dataPregunta['etiqueta_inicial'] ?? null,
+    'etiqueta_final'   => $dataPregunta['etiqueta_final'] ?? null,
+]);
 
                     // ===============================
                     // GUARDAR OPCIONES SEGÚN TIPO

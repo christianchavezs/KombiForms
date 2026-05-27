@@ -262,6 +262,9 @@ public function editar($id)
                     'tipo' => $p->tipo,
                     'texto' => $p->texto,
 
+                     // 🔥 IMPORTANTE: PONDERACIÓN
+                    'ponderacion' => (float) $p->ponderacion,
+
                     // 🔥 IMPORTANTES
                     'obligatorio' => (int) $p->obligatorio,
                     'requiere_evaluador' => (int) $p->requiere_evaluador,
@@ -410,8 +413,6 @@ public function editar($id)
 
 public function actualizar(Request $request, $id)
 {
-    
-
     $formulario = Formulario::findOrFail($id);
 
     // ==============================
@@ -439,7 +440,6 @@ public function actualizar(Request $request, $id)
 
         foreach ($seccionData['preguntas'] ?? [] as $preguntaData) {
 
-            // Validación segura del ID
             if (empty($preguntaData['id'])) {
                 continue;
             }
@@ -458,14 +458,26 @@ public function actualizar(Request $request, $id)
             // ==============================
             $pregunta->texto = $preguntaData['texto'] ?? $pregunta->texto;
 
-            // 🔥 FIX DEFINITIVO DEL CHECKBOX
-            $pregunta->requiere_evaluador = !empty($preguntaData['requiere_evaluador']) ? 1 : 0;
+            // obligatorio (seguro)
+            $pregunta->obligatorio = isset($preguntaData['obligatorio'])
+                ? (int) filter_var($preguntaData['obligatorio'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? 0
+                : $pregunta->obligatorio;
 
-            // LOG PARA DEPURACIÓN
+            // requiere evaluador (seguro)
+            $pregunta->requiere_evaluador = isset($preguntaData['requiere_evaluador'])
+                ? (int) filter_var($preguntaData['requiere_evaluador'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? 0
+                : $pregunta->requiere_evaluador;
+
+            // ⭐ PONDERACIÓN (FIX DEFINITIVO)
+            $pregunta->ponderacion = isset($preguntaData['ponderacion'])
+                ? (float) $preguntaData['ponderacion']
+                : $pregunta->ponderacion;
+
             \Log::info('PREGUNTA ACTUALIZADA:', [
                 'id' => $pregunta->id,
-                'recibido' => $preguntaData['requiere_evaluador'] ?? 0,
-                'guardado' => $pregunta->requiere_evaluador
+                'obligatorio' => $pregunta->obligatorio,
+                'requiere_evaluador' => $pregunta->requiere_evaluador,
+                'ponderacion' => $pregunta->ponderacion,
             ]);
 
             $pregunta->save();

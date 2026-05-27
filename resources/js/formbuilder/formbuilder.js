@@ -138,6 +138,9 @@ function normalizarSeccion(sec) {
       requiere_evaluador: Boolean(Number(p.requiere_evaluador)),
 
       orden: p.orden ?? 1,
+
+      ponderacion: Number(p.ponderacion ?? 1),
+
       escala_min: p.escala_min ?? 1,
       escala_max: p.escala_max ?? 5,
 
@@ -810,7 +813,7 @@ export function formBuilder(initialSections = [], formId = null) {
 
 
 
-
+/*
     getEstructura() {
     return this.secciones.map((sec, si) => ({
     titulo: sec.titulo?.trim() || "Sección sin título",
@@ -837,6 +840,9 @@ export function formBuilder(initialSections = [], formId = null) {
       const preguntaFinal = {
 
         requiere_evaluador: p.requiere_evaluador ? 1 : 0,
+
+        ponderacion: parseFloat(p.ponderacion ?? 1),
+
         tipo: p.tipo,
         texto: (p.texto?.trim() || "Pregunta sin título"),
         obligatorio: ["titulo", "texto"].includes(p.tipo) ? 0 : p.obligatorio ? 1 : 0,
@@ -893,7 +899,97 @@ export function formBuilder(initialSections = [], formId = null) {
     })
   }));
 },
+*/
 
+
+  getEstructura() {
+    return this.secciones.map((sec, si) => ({
+      titulo: sec.titulo?.trim() || "Sección sin título",
+      descripcion: sec.descripcion?.trim() || "",
+      orden: si + 1,
+
+      preguntas: sec.preguntas.map((p, pi) => {
+
+        // ======================================================
+        //  CUADRÍCULAS
+        // ======================================================
+        if (["cuadricula_opciones", "cuadricula_casillas"].includes(p.tipo)) {
+          cuadriculaAux.ensureCuadriculaStructure(p);
+        }
+
+        // ======================================================
+        //  PONDERACIÓN (FIX DEFINITIVO)
+        // ======================================================
+        let ponderacionFinal = 1;
+
+        if (p.ponderacion !== null && p.ponderacion !== undefined && p.ponderacion !== "") {
+          const parsed = Number(p.ponderacion);
+          ponderacionFinal = isNaN(parsed) ? 1 : parsed;
+        }
+
+        // ======================================================
+        //  OBJETO FINAL
+        // ======================================================
+        const preguntaFinal = {
+          requiere_evaluador: p.requiere_evaluador ? 1 : 0,
+
+          // 🔥 FIX AQUÍ
+          ponderacion: ponderacionFinal,
+
+          tipo: p.tipo,
+          texto: (p.texto?.trim() || "Pregunta sin título"),
+
+          obligatorio: ["titulo", "texto"].includes(p.tipo)
+            ? 0
+            : (p.obligatorio ? 1 : 0),
+
+          orden: pi + 1,
+
+          escala_min: p.tipo === "escala_lineal" ? (p.escala_min ?? 1) : null,
+          escala_max: p.tipo === "escala_lineal" ? (p.escala_max ?? 5) : null,
+
+          etiqueta_inicial: p.tipo === "escala_lineal"
+            ? (p.etiqueta_inicial?.trim() || "")
+            : null,
+
+          etiqueta_final: p.tipo === "escala_lineal"
+            ? (p.etiqueta_final?.trim() || "")
+            : null,
+
+          filas: ["cuadricula_opciones", "cuadricula_casillas"].includes(p.tipo)
+            ? (p.filas || []).map((f, fi) => ({
+                texto: f.texto?.trim() || `Fila ${fi + 1}`,
+                fila: fi + 1
+              }))
+            : [],
+
+          columnas: ["cuadricula_opciones", "cuadricula_casillas"].includes(p.tipo)
+            ? (p.columnas || []).map((c, ci) => ({
+                texto: c.texto?.trim() || `Columna ${ci + 1}`,
+                columna: ci + 1
+              }))
+            : [],
+
+          opciones: ["opcion_multiple", "casillas", "desplegable"].includes(p.tipo)
+            ? (p.opciones || []).map((o, oi) => ({
+                texto: o.texto?.trim() || `Opción ${oi + 1}`,
+                orden: oi + 1,
+                fila: null,
+                columna: null
+              }))
+            : [],
+
+          opciones_cuadricula: ["cuadricula_opciones", "cuadricula_casillas"].includes(p.tipo)
+            ? cuadriculaAux.updateCuadriculaOpciones(p)
+            : []
+        };
+
+        console.log(" Pregunta final generada:", JSON.parse(JSON.stringify(preguntaFinal)));
+
+        return preguntaFinal;
+      })
+    }));
+  },
 
 
     generarOpcionesCuadricula(p) {

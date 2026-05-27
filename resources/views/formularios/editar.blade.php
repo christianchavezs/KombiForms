@@ -576,6 +576,37 @@ class="flex w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                                 </div>
                             </template>
 
+                            {{-- PONDERACIÓN --}}
+<template x-if="
+    modoFormulario === 'cuestionario'
+    &&
+    (
+        ['opcion_multiple','casillas'].includes(pregunta.tipo)
+        ||
+        (
+            ['texto_corto','parrafo'].includes(pregunta.tipo)
+            &&
+            pregunta.requiere_evaluador
+        )
+    )
+">
+    <div class="flex justify-end mb-4">
+        <div class="w-40">
+            <label class="block text-xs font-bold text-indigo-700 mb-1 uppercase tracking-wide">
+                Ponderación
+            </label>
+
+            <input
+                type="number"
+                min="0"
+                step="0.25"
+                x-model.number="pregunta.ponderacion"
+                class="w-full border-2 border-indigo-300 focus:border-indigo-500 rounded-lg p-2 outline-none"
+            >
+        </div>
+    </div>
+</template>
+
                             <!-- OBLIGATORIA -->
                             <template x-if="!['titulo','texto'].includes(pregunta.tipo)">
                                 <div class="flex justify-end items-center gap-3 mt-4">
