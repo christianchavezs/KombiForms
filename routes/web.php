@@ -100,7 +100,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/formularios/{id}/modo', [FormularioController::class, 'actualizarModo']);
 
    
+    //EVALUACIONES:
 
+
+    Route::get('/formularios/{id}/evaluaciones', 
+        [Contestar_FormularioController::class, 'evaluaciones']
+    )->name('formularios.evaluaciones');
+
+
+    // ===============================================
+    // VER DETALLE DE EVALUACIÓN
+    // ===============================================
+    Route::get(
+        '/respuestas/{id}/evaluar',
+        [App\Http\Controllers\Contestar_FormularioController::class, 'evaluarRespuesta']
+    )->name('respuestas.evaluar');
+
+   
 
 
         // Secciones y preguntas AJAX

@@ -968,5 +968,4 @@ public function actualizarModo(Request $request, $id)
 
 
 
-
 }

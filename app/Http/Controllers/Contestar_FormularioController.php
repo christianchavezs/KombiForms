@@ -148,7 +148,89 @@ class Contestar_FormularioController extends Controller
         return redirect()->route('gracias');
     }
 
+    
+    public function evaluaciones($id)
+    {
+        $formulario = Formulario::findOrFail($id);
 
+        $respuestas = Respuesta::with([
+                'usuario',
+                'respuestasIndividuales.pregunta',
+                'respuestasIndividuales.opcion'
+            ])
+            ->where('formulario_id', $id)
+            ->orderByDesc('enviado_en')
+            ->get()
+            ->map(function ($respuesta) {
+
+                // TOTAL PUNTAJE
+                $total = $respuesta->respuestasIndividuales->sum('puntaje');
+
+                // ESTADO GENERAL
+                $estadoGeneral = $respuesta->respuestasIndividuales
+                    ->contains(fn($r) => $r->estado === 'pendiente')
+                    ? 'pendiente'
+                    : 'evaluado';
+
+                $respuesta->total_puntaje = $total;
+                $respuesta->estado_general = $estadoGeneral;
+
+                return $respuesta;
+            });
+
+        return view('formularios.evaluaciones', compact('formulario', 'respuestas'));
+    }
+
+    
+
+   
+/*
+// ===============================================
+// VER DETALLE DE EVALUACIÓN
+// ===============================================
+public function evaluarRespuesta($id)
+{
+    $respuesta = \App\Models\Respuesta::with([
+        'usuario',
+        'formulario',
+        'respuestasIndividuales',
+        'respuestasIndividuales.pregunta',
+        'respuestasIndividuales.opcion'
+    ])->findOrFail($id);
+
+    $formulario = $respuesta->formulario;
+
+    // DEBUG
+    // dd($respuesta->respuestasIndividuales);
+
+    return view('formularios.evaluarRespuesta', compact(
+        'respuesta',
+        'formulario'
+    ));
+}*/
+
+
+public function evaluarRespuesta($id)
+{
+    $respuesta = \App\Models\Respuesta::with([
+        'usuario',
+        'formulario',
+        'respuestasIndividuales.pregunta',
+        'respuestasIndividuales.opcion'
+    ])->findOrFail($id);
+
+    // ORDENAR RESPUESTAS POR PREGUNTA (IMPORTANTE PARA LISTADO)
+    $respuesta->respuestasIndividuales = $respuesta->respuestasIndividuales
+        ->sortBy('pregunta_id')
+        ->values();
+
+    $formulario = $respuesta->formulario;
+
+    return view('formularios.evaluarRespuesta', compact(
+        'respuesta',
+        'formulario'
+    ));
+}
 
 
 }

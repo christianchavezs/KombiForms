@@ -2,22 +2,65 @@
 
 @section('content')
 <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-extrabold text-gray-800">
-            Concentrado de Respuestas
-            <span class="text-base font-medium text-gray-500">— {{ $formulario->titulo }}</span>
-        </h1>
 
-        <a href="{{ route('formularios.concentrarRespuestas', $formulario->id) }}"
-           class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 4v16h16V4H4zm8 4v8m0 0l-4-4m4 4l4-4"/>
-            </svg>
-            Descargar Excel
-        </a>
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-6">
+
+        <div>
+            <h1 class="text-2xl font-extrabold text-gray-800">
+                Concentrado de Respuestas
+                <span class="text-base font-medium text-gray-500">
+                    — {{ $formulario->titulo }}
+                </span>
+            </h1>
+
+            {{-- BADGE SI ES CUESTIONARIO --}}
+            @if($formulario->modo === 'cuestionario')
+                <div class="mt-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
+                        📝 Modo Cuestionario
+                    </span>
+                </div>
+            @endif
+        </div>
+
+        <!-- BOTONES -->
+        <div class="flex items-center gap-3">
+
+            {{-- BOTÓN EVALUACIONES --}}
+            @if($formulario->modo === 'cuestionario')
+                <a href="{{ route('formularios.evaluaciones', $formulario->id) }}"
+                   class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
+
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                    </svg>
+
+                    Evaluaciones
+                </a>
+            @endif
+
+            {{-- EXCEL --}}
+            <a href="{{ route('formularios.concentrarRespuestas', $formulario->id) }}"
+               class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
+
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v16h16V4H4zm8 4v8m0 0l-4-4m4 4l4-4"/>
+                </svg>
+
+                Descargar Excel
+            </a>
+
+        </div>
     </div>
 
+    
     {{-- Estadísticas por sección y pregunta --}}
     @php $preguntaIndex = 1; @endphp
     <div class="space-y-6">
