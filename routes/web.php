@@ -141,7 +141,12 @@ Route::middleware('auth')->group(function () {
         [App\Http\Controllers\Contestar_FormularioController::class, 'evaluarRespuesta']
     )->name('respuestas.evaluar');
 
-   
+   // ===============================================
+    // GUARDAR EVALUACIÓN MANUAL (texto corto/parrafo)
+    // ===============================================
+    Route::post('/respuestas/{id}/evaluar',
+        [Contestar_FormularioController::class, 'guardarEvaluacionManual']
+    )->name('respuestas.evaluar.guardar');
 
 
         // Secciones y preguntas AJAX

@@ -17,7 +17,15 @@ class Respuesta extends Model
     protected $fillable = [
         'formulario_id',
         'usuario_id',
-        'correo_respondedor'
+        'correo_respondedor',
+        'estado',
+        'puntaje_total',
+        'maxima_calificacion',
+    ];
+
+    protected $casts = [
+        'puntaje_total' => 'decimal:2',
+        'maxima_calificacion' => 'decimal:2',
     ];
 
     public function formulario()
@@ -25,7 +33,6 @@ class Respuesta extends Model
         return $this->belongsTo(Formulario::class, 'formulario_id');
     }
 
-    
     public function respuestasIndividuales()
     {
         return $this->hasMany(RespuestaIndividual::class, 'respuesta_id');
@@ -41,4 +48,3 @@ class Respuesta extends Model
         return $this->belongsTo(User::class, 'usuario_id');
     }
 }
-
