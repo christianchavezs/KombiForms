@@ -49,30 +49,46 @@ class Contestar_FormularioController extends Controller
         return view('Contestar_formulario', compact('formulario'));
     }
 
-    /*
+
+
     public function responder(Request $request, Formulario $formulario)
     {
         DB::transaction(function () use ($request, $formulario) {
 
-            // Datos del usuaria o persona que responde la encuesta
-            $data = [ 'formulario_id' => $formulario->id, ];
+            $data = [ 'formulario_id' => $formulario->id ];
 
-            //cuando no es anonimo guarda el id del usuario y el correo 
             if (!$formulario->permitir_anonimo && Auth::check()) {
                 $data['usuario_id'] = Auth::id();
                 $data['correo_respondedor'] = Auth::user()->email;
             }
 
-            $respuesta =  Respuesta::create($data);
-            
-            // Respuestas individuales
-            foreach ($request->input('respuestas', []) as $preguntaId => $valor) {
+            // Crear respuesta con máxima calificación calculada vía secciones → preguntas
+            $respuesta = new Respuesta($data);
+            $respuesta->puntaje_total = 0;
 
+            $formulario->load('secciones.preguntas');
+
+            $respuesta->maxima_calificacion = $formulario->secciones
+            ->flatMap(fn($s) => $s->preguntas)
+            ->filter(function ($pregunta) {
+                return $pregunta->tipo === 'opcion_multiple'
+                    || $pregunta->tipo === 'casillas'
+                    || (
+                        in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                        && $pregunta->requiere_evaluador
+                    );
+            })
+            ->sum('ponderacion');
+
+
+            $respuesta->estado = 'pendiente';
+            $respuesta->save();
+
+            // Guardar respuestas individuales
+            foreach ($request->input('respuestas', []) as $preguntaId => $valor) {
                 $pregunta = Pregunta::find($preguntaId);
 
                 switch ($pregunta->tipo) {
-
-                    //  TEXTO
                     case 'texto_corto':
                     case 'parrafo':
                         RespuestaIndividual::create([
@@ -82,7 +98,6 @@ class Contestar_FormularioController extends Controller
                         ]);
                         break;
 
-                    //  OPCIÓN ÚNICA
                     case 'opcion_multiple':
                         RespuestaIndividual::create([
                             'respuesta_id' => $respuesta->id,
@@ -90,17 +105,15 @@ class Contestar_FormularioController extends Controller
                             'opcion_id'    => $valor,
                         ]);
                         break;
-                    
-                    // ESCALA LINEAL
+
                     case 'escala_lineal':
                         RespuestaIndividual::create([
                             'respuesta_id'   => $respuesta->id,
                             'pregunta_id'    => $preguntaId,
-                            'valor_numerico' => $valor, // aquí se guarda directamente el número elegido (ej. 3 de un rango 1–7)
+                            'valor_numerico' => $valor,
                         ]);
                         break;
 
-                    //  CASILLAS
                     case 'casillas':
                         foreach ($valor as $opcionId) {
                             RespuestaIndividual::create([
@@ -111,7 +124,6 @@ class Contestar_FormularioController extends Controller
                         }
                         break;
 
-                    //  CUADRÍCULA OPCIÓN ÚNICA
                     case 'cuadricula_opciones':
                         foreach ($valor as $filaId => $opcionId) {
                             RespuestaIndividual::create([
@@ -123,7 +135,6 @@ class Contestar_FormularioController extends Controller
                         }
                         break;
 
-                    //  CUADRÍCULA CASILLAS
                     case 'cuadricula_casillas':
                         foreach ($valor as $filaId => $columnas) {
                             foreach ($columnas as $opcionId) {
@@ -142,119 +153,12 @@ class Contestar_FormularioController extends Controller
 
         return redirect()->route('gracias');
     }
-        */
 
 
 
-public function responder(Request $request, Formulario $formulario)
-{
-    DB::transaction(function () use ($request, $formulario) {
-
-        $data = [ 'formulario_id' => $formulario->id ];
-
-        if (!$formulario->permitir_anonimo && Auth::check()) {
-            $data['usuario_id'] = Auth::id();
-            $data['correo_respondedor'] = Auth::user()->email;
-        }
-
-        // 🆕 Crear respuesta con máxima calificación calculada vía secciones → preguntas
-        $respuesta = new Respuesta($data);
-        $respuesta->puntaje_total = 0;
-
-       $formulario->load('secciones.preguntas');
-
-$respuesta->maxima_calificacion = $formulario->secciones
-    ->flatMap(fn($s) => $s->preguntas)
-    ->filter(function ($pregunta) {
-        return $pregunta->tipo === 'opcion_multiple'
-            || $pregunta->tipo === 'casillas'
-            || (
-                in_array($pregunta->tipo, ['texto_corto','parrafo'])
-                && $pregunta->requiere_evaluador
-            );
-    })
-    ->sum('ponderacion');
-
-
-        $respuesta->estado = 'pendiente';
-        $respuesta->save();
-
-        // Guardar respuestas individuales
-        foreach ($request->input('respuestas', []) as $preguntaId => $valor) {
-            $pregunta = Pregunta::find($preguntaId);
-
-            switch ($pregunta->tipo) {
-                case 'texto_corto':
-                case 'parrafo':
-                    RespuestaIndividual::create([
-                        'respuesta_id'    => $respuesta->id,
-                        'pregunta_id'     => $preguntaId,
-                        'texto_respuesta' => $valor,
-                    ]);
-                    break;
-
-                case 'opcion_multiple':
-                    RespuestaIndividual::create([
-                        'respuesta_id' => $respuesta->id,
-                        'pregunta_id'  => $preguntaId,
-                        'opcion_id'    => $valor,
-                    ]);
-                    break;
-
-                case 'escala_lineal':
-                    RespuestaIndividual::create([
-                        'respuesta_id'   => $respuesta->id,
-                        'pregunta_id'    => $preguntaId,
-                        'valor_numerico' => $valor,
-                    ]);
-                    break;
-
-                case 'casillas':
-                    foreach ($valor as $opcionId) {
-                        RespuestaIndividual::create([
-                            'respuesta_id' => $respuesta->id,
-                            'pregunta_id'  => $preguntaId,
-                            'opcion_id'    => $opcionId,
-                        ]);
-                    }
-                    break;
-
-                case 'cuadricula_opciones':
-                    foreach ($valor as $filaId => $opcionId) {
-                        RespuestaIndividual::create([
-                            'respuesta_id' => $respuesta->id,
-                            'pregunta_id'  => $preguntaId,
-                            'fila_id'      => $filaId,
-                            'opcion_id'    => $opcionId,
-                        ]);
-                    }
-                    break;
-
-                case 'cuadricula_casillas':
-                    foreach ($valor as $filaId => $columnas) {
-                        foreach ($columnas as $opcionId) {
-                            RespuestaIndividual::create([
-                                'respuesta_id' => $respuesta->id,
-                                'pregunta_id'  => $preguntaId,
-                                'fila_id'      => $filaId,
-                                'opcion_id'    => $opcionId,
-                            ]);
-                        }
-                    }
-                    break;
-            }
-        }
-    });
-
-    return redirect()->route('gracias');
-}
-
-
-
-    
     public function evaluaciones($id)
     {
-        $formulario = Formulario::findOrFail($id);
+        $formulario = Formulario::with('secciones.preguntas.opciones')->findOrFail($id);
 
         $respuestas = Respuesta::with([
             'usuario',
@@ -264,139 +168,166 @@ $respuesta->maxima_calificacion = $formulario->secciones
         ->where('formulario_id', $id)
         ->orderByDesc('enviado_en')
         ->get()
-        ->map(function ($respuesta) {
-            $total = $respuesta->respuestasIndividuales->sum('puntaje');
-            $estadoGeneral = $respuesta->respuestasIndividuales
-                ->contains(fn($r) => $r->estado === 'pendiente')
-                ? 'pendiente'
-                : 'evaluado';
+        ->map(function ($respuesta) use ($formulario) {
 
-            $respuesta->total_puntaje = $total;
-            $respuesta->estado_general = $estadoGeneral;
-            $respuesta->maxima_calificacion = $respuesta->maxima_calificacion; // ya guardado en BD
+            // Recalcular máxima calificación
+            $respuesta->maxima_calificacion = $formulario->secciones
+                ->flatMap(fn($s) => $s->preguntas)
+                ->filter(function ($pregunta) {
+                    return $pregunta->tipo === 'opcion_multiple'
+                        || $pregunta->tipo === 'casillas'
+                        || (
+                            in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                            && $pregunta->requiere_evaluador
+                        );
+                })
+                ->sum('ponderacion');
+
+            // Autoevaluar opción múltiple y casillas
+            foreach ($respuesta->respuestasIndividuales as $ri) {
+                $pregunta = $ri->pregunta;
+
+                if ($pregunta->tipo === 'opcion_multiple' && $ri->opcion && $ri->opcion->es_correcta) {
+                    $ri->puntaje = $pregunta->ponderacion;
+                    $ri->estado = 'correcta';
+                    $ri->save();
+                }
+
+                if ($pregunta->tipo === 'casillas' && $ri->opcion && $ri->opcion->es_correcta) {
+                    $totalCorrectas = $pregunta->opciones->where('es_correcta', 1)->count();
+                    $ri->puntaje = $totalCorrectas > 0 ? $pregunta->ponderacion / $totalCorrectas : 0;
+                    $ri->estado = 'correcta';
+                    $ri->save();
+                }
+            }
+
+            // Recalcular puntaje total
+            $respuesta->puntaje_total = $respuesta->respuestasIndividuales->sum('puntaje');
+
+            // Cambiar estado automáticamente si todas las preguntas evaluables ya están calificadas
+            $pendientes = $respuesta->respuestasIndividuales->filter(function ($ri) {
+                $pregunta = $ri->pregunta;
+                return (
+                    $pregunta->tipo === 'opcion_multiple'
+                    || $pregunta->tipo === 'casillas'
+                    || (
+                        in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                        && $pregunta->requiere_evaluador
+                    )
+                ) && $ri->estado === 'pendiente';
+            });
+
+            $respuesta->estado = $pendientes->isEmpty() ? 'evaluado' : 'pendiente';
+            $respuesta->save();
 
             return $respuesta;
         });
 
-
         return view('formularios.evaluaciones', compact('formulario', 'respuestas'));
     }
 
+
     
-// ===============================================
-// VER DETALLE DE EVALUACIÓN
-// ===============================================
-/*
-public function evaluarRespuesta($id)
-{
-    $respuesta = \App\Models\Respuesta::with([
-        'usuario',
-        'formulario',
-        'respuestasIndividuales.pregunta',
-        'respuestasIndividuales.opcion'
-    ])->findOrFail($id);
+    // ===============================================
+    // VER DETALLE DE EVALUACIÓN
+    // ===============================================
 
-    // ORDENAR RESPUESTAS POR PREGUNTA (IMPORTANTE PARA LISTADO)
-    $respuesta->respuestasIndividuales = $respuesta->respuestasIndividuales
-        ->sortBy('pregunta_id')
-        ->values();
 
-    $formulario = $respuesta->formulario;
+    public function evaluarRespuesta($id)
+    {
+        $respuesta = Respuesta::with([
+            'usuario',
+            'formulario.secciones.preguntas.opciones',
+            'respuestasIndividuales.pregunta',
+            'respuestasIndividuales.opcion'
+        ])->findOrFail($id);
 
-    return view('formularios.evaluarRespuesta', compact(
-        'respuesta',
-        'formulario'
-    ));
-}*/
+        $formulario = $respuesta->formulario;
 
-public function evaluarRespuesta($id)
-{
-    $respuesta = Respuesta::with([
-        'usuario',
-        'formulario.secciones.preguntas.opciones',
-        'respuestasIndividuales.pregunta',
-        'respuestasIndividuales.opcion'
-    ])->findOrFail($id);
+        // 🆕 Recalcular máxima calificación cada vez que se abre la vista
+        $formulario->load('secciones.preguntas');
+        $respuesta->maxima_calificacion = $formulario->secciones
+            ->flatMap(fn($s) => $s->preguntas)
+            ->filter(function ($pregunta) {
+                return $pregunta->tipo === 'opcion_multiple'
+                    || $pregunta->tipo === 'casillas'
+                    || (
+                        in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                        && $pregunta->requiere_evaluador
+                    );
+            })
+            ->sum('ponderacion');
+        $respuesta->save();
 
-    $formulario = $respuesta->formulario;
+        // Calcular automáticamente puntajes de opción múltiple y casillas
+        foreach ($respuesta->respuestasIndividuales as $ri) {
+            $pregunta = $ri->pregunta;
 
-    // 🆕 Recalcular máxima calificación cada vez que se abre la vista
-    $formulario->load('secciones.preguntas');
-    $respuesta->maxima_calificacion = $formulario->secciones
-        ->flatMap(fn($s) => $s->preguntas)
-        ->filter(function ($pregunta) {
-            return $pregunta->tipo === 'opcion_multiple'
+            if ($pregunta->tipo === 'opcion_multiple' && $ri->opcion && $ri->opcion->es_correcta) {
+                $ri->puntaje = $pregunta->ponderacion;
+                $ri->estado = 'correcta';
+                $ri->save();
+            }
+
+            if ($pregunta->tipo === 'casillas' && $ri->opcion && $ri->opcion->es_correcta) {
+                // Puntaje proporcional si hay varias correctas
+                $totalCorrectas = $pregunta->opciones->where('es_correcta', 1)->count();
+                $ri->puntaje = $totalCorrectas > 0 ? $pregunta->ponderacion / $totalCorrectas : 0;
+                $ri->estado = 'correcta';
+                $ri->save();
+            }
+        }
+
+        // Recalcular puntaje total
+        $respuesta->puntaje_total = $respuesta->respuestasIndividuales->sum('puntaje');
+
+        // 🆕 Cambiar estado automáticamente a "evaluado" si todas las respuestas que deben evaluarse ya están calificadas
+        $pendientes = $respuesta->respuestasIndividuales->filter(function ($ri) {
+            $pregunta = $ri->pregunta;
+            return (
+                $pregunta->tipo === 'opcion_multiple'
                 || $pregunta->tipo === 'casillas'
                 || (
                     in_array($pregunta->tipo, ['texto_corto','parrafo'])
                     && $pregunta->requiere_evaluador
-                );
-        })
-        ->sum('ponderacion');
-    $respuesta->save();
+                )
+            ) && $ri->estado === 'pendiente';
+        });
 
-    // Calcular automáticamente puntajes de opción múltiple y casillas
-    foreach ($respuesta->respuestasIndividuales as $ri) {
-        $pregunta = $ri->pregunta;
+        $respuesta->estado = $pendientes->isEmpty() ? 'evaluado' : 'pendiente';
+        $respuesta->save();
 
-        if ($pregunta->tipo === 'opcion_multiple' && $ri->opcion && $ri->opcion->es_correcta) {
-            $ri->puntaje = $pregunta->ponderacion;
-            $ri->estado = 'correcta';
-            $ri->save();
-        }
+        // Ordenar respuestas para la vista
+        $respuesta->respuestasIndividuales = $respuesta->respuestasIndividuales
+            ->sortBy('pregunta_id')
+            ->values();
 
-        if ($pregunta->tipo === 'casillas' && $ri->opcion && $ri->opcion->es_correcta) {
-            // Puntaje proporcional si hay varias correctas
-            $totalCorrectas = $pregunta->opciones->where('es_correcta', 1)->count();
-            $ri->puntaje = $totalCorrectas > 0 ? $pregunta->ponderacion / $totalCorrectas : 0;
-            $ri->estado = 'correcta';
-            $ri->save();
-        }
+        return view('formularios.evaluarRespuesta', compact('respuesta', 'formulario'));
     }
 
-    // Recalcular puntaje total y estado general
-    $respuesta->puntaje_total = $respuesta->respuestasIndividuales->sum('puntaje');
-    $respuesta->estado = $respuesta->respuestasIndividuales->contains(fn($r) => $r->estado === 'pendiente')
-        ? 'pendiente'
-        : 'evaluado';
-    $respuesta->save();
 
-    // Ordenar respuestas para la vista
-    $respuesta->respuestasIndividuales = $respuesta->respuestasIndividuales
-        ->sortBy('pregunta_id')
-        ->values();
+    public function guardarEvaluacionManual(Request $request, $id)
+    {
+        $ri = RespuestaIndividual::findOrFail($id);
 
-    return view('formularios.evaluarRespuesta', compact('respuesta', 'formulario'));
-}
+        $ri->estado = $request->input('estado');
+        $ri->puntaje = $request->input('puntaje');
+        $ri->save();
 
+        $respuesta = $ri->respuesta;
+        $respuesta->puntaje_total = $respuesta->respuestasIndividuales->sum('puntaje');
+        $respuesta->estado = $respuesta->respuestasIndividuales->contains(fn($r) => $r->estado === 'pendiente')
+            ? 'pendiente'
+            : 'evaluado';
+        $respuesta->save();
 
-
- 
-public function guardarEvaluacionManual(Request $request, $id)
-{
-    $ri = RespuestaIndividual::findOrFail($id);
-
-    $ri->estado = $request->input('estado');
-    $ri->puntaje = $request->input('puntaje');
-    $ri->save();
-
-    $respuesta = $ri->respuesta;
-    $respuesta->puntaje_total = $respuesta->respuestasIndividuales->sum('puntaje');
-    $respuesta->estado = $respuesta->respuestasIndividuales->contains(fn($r) => $r->estado === 'pendiente')
-        ? 'pendiente'
-        : 'evaluado';
-    $respuesta->save();
-
-    return response()->json([
-        'estado' => $ri->estado,
-        'puntaje' => number_format($ri->puntaje, 2),
-        'puntaje_total' => number_format($respuesta->puntaje_total, 2),
-        'maxima_calificacion' => number_format($respuesta->maxima_calificacion, 2),
-    ]);
-}
-
-
-
+        return response()->json([
+            'estado' => $ri->estado,
+            'puntaje' => number_format($ri->puntaje, 2),
+            'puntaje_total' => number_format($respuesta->puntaje_total, 2),
+            'maxima_calificacion' => number_format($respuesta->maxima_calificacion, 2),
+        ]);
+    }
 
 
 }

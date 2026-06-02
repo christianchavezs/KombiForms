@@ -44,8 +44,9 @@
                         </td>
 
                         <td class="p-3">
-                            {{ $respuesta->total_puntaje }}
+                            {{ number_format($respuesta->puntaje_total ?? 0, 2) }} / {{ number_format($respuesta->maxima_calificacion ?? 0, 2) }}
                         </td>
+
 
                         <td class="p-3">
     <span class="px-2 py-1 rounded text-xs font-bold
