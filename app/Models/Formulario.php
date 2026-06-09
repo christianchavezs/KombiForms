@@ -55,4 +55,25 @@ class Formulario extends Model
     {
         return $this->hasMany(Seccion::class, 'formulario_id')->orderBy('orden');
     }
+
+    public function getEstadoAttribute()
+    {
+        $ahora = now();
+
+        if ($this->fecha_fin && $this->fecha_fin <= $ahora) {
+            return 'Inactivo';
+        }
+
+        if ($this->fecha_inicio && $this->fecha_inicio > $ahora) {
+            return 'Programado';
+        }
+
+        if ($this->fecha_inicio && $this->fecha_inicio <= $ahora &&
+            (!$this->fecha_fin || $this->fecha_fin > $ahora)) {
+            return 'Activo';
+        }
+
+        return $this->activo ? 'Activo' : 'Inactivo';
+    }
+
 }
