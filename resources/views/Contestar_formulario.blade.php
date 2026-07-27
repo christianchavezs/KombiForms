@@ -16,7 +16,11 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ url('/formularios/'.$formulario->id.'/responder') }}" class="form-main">
+    <!--form method="POST" action="{{ url('/formularios/'.$formulario->id.'/responder') }}" class="form-main"-->
+    <form method="POST"
+      action="{{ url('/formularios/'.$formulario->id.'/responder') }}"
+      class="form-main"
+      autocomplete="off">
         @csrf
         @foreach($formulario->secciones as $seccion)
             <div class="form-section">
@@ -840,6 +844,9 @@
 }
 </style>
 
+
+
+
 <script>
 // Actualizar barra de progreso mientras el usuario completa el formulario
 document.addEventListener('DOMContentLoaded', function() {
@@ -878,4 +885,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<script>
+window.addEventListener('pageshow', () => {
+    document.querySelector('form')?.reset();
+});
+</script>
+
 @endsection

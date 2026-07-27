@@ -164,80 +164,92 @@ class Contestar_FormularioController extends Controller
 
 
 
-    public function responder(Request $request, Formulario $formulario)
-    {
-        DB::transaction(function () use ($request, $formulario) {
+public function responder(Request $request, Formulario $formulario)
+{
+    DB::transaction(function () use ($request, $formulario) {
 
-            $data = [ 'formulario_id' => $formulario->id ];
+        $data = [ 'formulario_id' => $formulario->id ];
 
-            if (!$formulario->permitir_anonimo && Auth::check()) {
-                $data['usuario_id'] = Auth::id();
-                $data['correo_respondedor'] = Auth::user()->email;
-            }
+        if (!$formulario->permitir_anonimo && Auth::check()) {
+            $data['usuario_id'] = Auth::id();
+            $data['correo_respondedor'] = Auth::user()->email;
+        }
 
-            // Crear respuesta con máxima calificación calculada vía secciones → preguntas
-            $respuesta = new Respuesta($data);
-            $respuesta->puntaje_total = 0;
+        // Crear respuesta con máxima calificación calculada vía secciones → preguntas
+        $respuesta = new Respuesta($data);
+        $respuesta->puntaje_total = 0;
 
-            $formulario->load('secciones.preguntas');
+        $formulario->load('secciones.preguntas');
 
-            $respuesta->maxima_calificacion = $formulario->secciones
-                ->flatMap(fn($s) => $s->preguntas)
-                ->filter(function ($pregunta) {
-                    return $pregunta->tipo === 'opcion_multiple'
-                        || $pregunta->tipo === 'casillas'
-                        || (
-                            in_array($pregunta->tipo, ['texto_corto','parrafo'])
-                            && $pregunta->requiere_evaluador
-                        );
-                })
-                ->sum('ponderacion');
+        $respuesta->maxima_calificacion = $formulario->secciones
+            ->flatMap(fn($s) => $s->preguntas)
+            ->filter(function ($pregunta) {
+                return $pregunta->tipo === 'opcion_multiple'
+                    || $pregunta->tipo === 'casillas'
+                    || (
+                        in_array($pregunta->tipo, ['texto_corto','parrafo'])
+                        && $pregunta->requiere_evaluador
+                    );
+            })
+            ->sum('ponderacion');
 
-            $respuesta->estado = 'pendiente';
-            $respuesta->save();
+        $respuesta->estado = 'pendiente';
+        $respuesta->save();
 
-            // Guardar respuestas individuales
-            foreach ($request->input('respuestas', []) as $preguntaId => $valor) {
-                $pregunta = Pregunta::find($preguntaId);
+        // Guardar respuestas individuales
+        foreach ($request->input('respuestas', []) as $preguntaId => $valor) {
+            $pregunta = Pregunta::find($preguntaId);
 
-                switch ($pregunta->tipo) {
-                    case 'texto_corto':
-                    case 'parrafo':
-                        RespuestaIndividual::create([
-                            'respuesta_id'    => $respuesta->id,
-                            'pregunta_id'     => $preguntaId,
-                            'texto_respuesta' => $valor,
-                        ]);
-                        break;
+            switch ($pregunta->tipo) {
+                case 'texto_corto':
+                case 'parrafo':
+                    RespuestaIndividual::create([
+                        'respuesta_id'    => $respuesta->id,
+                        'pregunta_id'     => $preguntaId,
+                        'texto_respuesta' => $valor,
+                    ]);
+                    break;
 
-                    case 'opcion_multiple':
+                case 'opcion_multiple':
+                    RespuestaIndividual::create([
+                        'respuesta_id' => $respuesta->id,
+                        'pregunta_id'  => $preguntaId,
+                        'opcion_id'    => $valor,
+                    ]);
+                    break;
+
+                case 'escala_lineal':
+                    RespuestaIndividual::create([
+                        'respuesta_id'   => $respuesta->id,
+                        'pregunta_id'    => $preguntaId,
+                        'valor_numerico' => $valor,
+                    ]);
+                    break;
+
+                case 'casillas':
+                    foreach ($valor as $opcionId) {
                         RespuestaIndividual::create([
                             'respuesta_id' => $respuesta->id,
                             'pregunta_id'  => $preguntaId,
-                            'opcion_id'    => $valor,
+                            'opcion_id'    => $opcionId,
                         ]);
-                        break;
+                    }
+                    break;
 
-                    case 'escala_lineal':
+                case 'cuadricula_opciones':
+                    foreach ($valor as $filaId => $opcionId) {
                         RespuestaIndividual::create([
-                            'respuesta_id'   => $respuesta->id,
-                            'pregunta_id'    => $preguntaId,
-                            'valor_numerico' => $valor,
+                            'respuesta_id' => $respuesta->id,
+                            'pregunta_id'  => $preguntaId,
+                            'fila_id'      => $filaId,
+                            'opcion_id'    => $opcionId,
                         ]);
-                        break;
+                    }
+                    break;
 
-                    case 'casillas':
-                        foreach ($valor as $opcionId) {
-                            RespuestaIndividual::create([
-                                'respuesta_id' => $respuesta->id,
-                                'pregunta_id'  => $preguntaId,
-                                'opcion_id'    => $opcionId,
-                            ]);
-                        }
-                        break;
-
-                    case 'cuadricula_opciones':
-                        foreach ($valor as $filaId => $opcionId) {
+                case 'cuadricula_casillas':
+                    foreach ($valor as $filaId => $columnas) {
+                        foreach ($columnas as $opcionId) {
                             RespuestaIndividual::create([
                                 'respuesta_id' => $respuesta->id,
                                 'pregunta_id'  => $preguntaId,
@@ -245,33 +257,26 @@ class Contestar_FormularioController extends Controller
                                 'opcion_id'    => $opcionId,
                             ]);
                         }
-                        break;
-
-                    case 'cuadricula_casillas':
-                        foreach ($valor as $filaId => $columnas) {
-                            foreach ($columnas as $opcionId) {
-                                RespuestaIndividual::create([
-                                    'respuesta_id' => $respuesta->id,
-                                    'pregunta_id'  => $preguntaId,
-                                    'fila_id'      => $filaId,
-                                    'opcion_id'    => $opcionId,
-                                ]);
-                            }
-                        }
-                        break;
-                }
+                    }
+                    break;
             }
-        });
+        }
+    });
 
-        session()->forget('acceso_anonimo_formulario');
-        
-        // 🔹 Redirección limpia a la vista de gracias
-        return redirect()->route('gracias')->withHeaders([
-            'Cache-Control' => 'no-store, no-cache, must-revalidate',
-            'Pragma'        => 'no-cache',
-            'Expires'       => '0',
-        ]);
+    // 🔹 Guardar el último formulario anónimo en sesión
+    if ($formulario->permitir_anonimo) {
+        session(['ultimo_formulario_anonimo' => $formulario->id]);
     }
+
+    // 🔹 Redirección limpia a la vista de gracias con cabeceras anti‑caché reforzadas
+    return response()
+    ->redirectToRoute('gracias', [], 303) // 🔹 303 en lugar de 302
+    ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    ->header('Pragma', 'no-cache')
+    ->header('Expires', '0');
+
+}
+
 
 
 

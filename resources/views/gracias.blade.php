@@ -81,21 +81,14 @@
     </p>
 
     <!-- Botón para iniciar otra encuesta -->
-    <a href="{{ route('loginAnonimo') }}" class="btn">
+    <a href="{{ route('anonimo.iniciar', session('ultimo_formulario_anonimo')) }}"
+    class="btn">
         Contestar otra vez
     </a>
 </div>
 
-<!-- 🆕 Script para controlar historial -->
-<script>
-    // Evita que el navegador muestre datos anteriores al regresar
-    window.history.pushState(null, "", window.location.href);
 
-    window.onpopstate = function () {
-        // Si el usuario intenta regresar, lo mandamos al inicio anónimo
-        window.location.href = "{{ route('loginAnonimo') }}";
-    };
-</script>
+
 
 </body>
 </html>
