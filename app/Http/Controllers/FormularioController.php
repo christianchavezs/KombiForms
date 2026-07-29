@@ -600,7 +600,11 @@ public function actualizar(Request $request, $id)
         }
 
         // Guardamos a dónde debe volver después del login
-        session(['url.intended' => route('mostrar', $formulario)]);
+       // session(['url.intended' => route('mostrar', $formulario)]);
+
+       session([
+            'url.intended' => route('formularios.contestar', $formulario)
+        ]);
 
         // Si requiere usuario registrado → redirigir al login normal
         return redirect()->route('login');

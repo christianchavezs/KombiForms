@@ -76,6 +76,25 @@ Route::get('/anonimo/iniciar/{formulario}', function ($formulario) {
 // ------------------------------------------------------
 require __DIR__.'/auth.php';
 
+
+// ======================================================
+// 🔹 RUTAS PARA RESPONDER FORMULARIOS (usuarios autenticados)
+// ======================================================
+// Cualquier usuario autenticado (administrador, creador o usuario)
+// puede acceder únicamente al formulario para responderlo.
+Route::middleware('auth')->group(function () {
+
+    Route::get(
+        '/formularios/{formulario}/contestar',
+        [Contestar_FormularioController::class, 'mostrar']
+    )->name('formularios.contestar');
+
+});
+
+
+
+
+
 // ======================================================
 // 🔒 RUTAS PRIVADAS: Dashboard, Formularios (CRUD + extras) y Usuarios
 // ======================================================

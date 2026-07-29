@@ -80,11 +80,14 @@
         Agradecemos el tiempo que te tomaste para ayudarnos a mejorar.
     </p>
 
-    <!-- Botón para iniciar otra encuesta -->
-    <a href="{{ route('anonimo.iniciar', session('ultimo_formulario_anonimo')) }}"
-    class="btn">
-        Contestar otra vez
-    </a>
+
+    @if($ultimoFormularioToken)
+        <!-- Botón para volver a iniciar el flujo del formulario -->
+        <a href="{{ route('formularios.acceder', $ultimoFormularioToken) }}"
+        class="btn">
+            Contestar otra vez
+        </a>
+    @endif
 </div>
 
 

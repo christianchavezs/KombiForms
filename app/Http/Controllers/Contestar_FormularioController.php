@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Contestar_FormularioController extends Controller
 {
-    public function gracias()
+    /* public function gracias()
     {
         if (Auth::check()) {
             Auth::logout();
@@ -21,6 +21,22 @@ class Contestar_FormularioController extends Controller
             request()->session()->regenerateToken();
         }
         return view('gracias');
+    }*/
+
+    public function gracias()
+    {
+        // Guardamos el token antes de destruir la sesión
+        $ultimoFormularioToken = session('ultimo_formulario_token');
+
+        if (Auth::check()) {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
+
+        return view('gracias', [
+            'ultimoFormularioToken' => $ultimoFormularioToken,
+        ]);
     }
 
 
@@ -264,9 +280,14 @@ public function responder(Request $request, Formulario $formulario)
     });
 
     // 🔹 Guardar el último formulario anónimo en sesión
-    if ($formulario->permitir_anonimo) {
+    /* if ($formulario->permitir_anonimo) {
         session(['ultimo_formulario_anonimo' => $formulario->id]);
-    }
+    } */
+
+    // 🔹 Guardar el token del último formulario respondido
+    session([
+        'ultimo_formulario_token' => $formulario->token
+    ]);
 
     // 🔹 Redirección limpia a la vista de gracias con cabeceras anti‑caché reforzadas
     return response()
