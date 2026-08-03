@@ -585,6 +585,7 @@ public function actualizar(Request $request, $id)
     // ACCEDER A FORMULARIO POR TOKEN (enlace público)
     // ===============================================
     
+    /*
     public function acceder($token)
     { 
         $formulario = Formulario::where('token', $token)->firstOrFail();
@@ -608,9 +609,48 @@ public function actualizar(Request $request, $id)
 
         // Si requiere usuario registrado → redirigir al login normal
         return redirect()->route('login');
+    }*/
+
+    // ===============================================
+    // ACCEDER A FORMULARIO POR TOKEN (enlace público)
+    // ===============================================
+    public function acceder($token)
+    {
+        $formulario = Formulario::where('token', $token)->firstOrFail();
+
+        // Si está inactivo → mostrar vista de cerrado
+        if (!$formulario->activo) {
+            return view('formularios.formularioCerrado', compact('formulario'));
+        }
+
+        // Si el formulario permite respuestas anónimas
+        if ($formulario->permitir_anonimo) {
+
+            // Guardamos el token del formulario autorizado
+            session([
+                'acceso_formulario_token' => $token
+            ]);
+
+            // Mostrar login anónimo
+            return view('formularios.loginAnonimo', compact('formulario'));
+        }
+
+        // Si ya inició sesión, mostrar directamente el formulario
+        if (auth()->check()) {
+
+            return redirect()->route('formularios.contestar', $token);
+
+        }
+
+        session([
+            'url.intended' => route('formularios.contestar', $token)
+        ]);
+
+        return redirect()->route('login');
     }
 
 
+    /*
     public function responder($id)
     {
         $formulario = Formulario::with(['secciones.preguntas.opciones'])->findOrFail($id);
@@ -625,6 +665,33 @@ public function actualizar(Request $request, $id)
             $existe = Respuesta::where('formulario_id', $formulario->id)
                             ->where('email', auth()->user()->email) // correo del usuario logueado
                             ->exists();
+
+            if ($existe) {
+                // Mostrar vista de "ya contestado"
+                return view('formularios.formularioYaContestado', compact('formulario'));
+            }
+        }
+
+        return view('formularios.responder', compact('formulario'));
+    } */
+
+
+    public function responder($token)
+    {
+        $formulario = Formulario::with(['secciones.preguntas.opciones'])
+            ->where('token', $token)
+            ->firstOrFail();
+
+        // Si está inactivo → mostrar vista de cerrado
+        if (!$formulario->activo) {
+            return view('formularios.formularioCerrado', compact('formulario'));
+        }
+
+        // Si requiere correo y es de una sola respuesta
+        if ($formulario->requiere_correo && $formulario->una_respuesta) {
+            $existe = Respuesta::where('formulario_id', $formulario->id)
+                ->where('email', auth()->user()->email) // correo del usuario logueado
+                ->exists();
 
             if ($existe) {
                 // Mostrar vista de "ya contestado"

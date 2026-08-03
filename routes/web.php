@@ -57,19 +57,33 @@ Route::post('/email/verification-notification', [VerifyEmailController::class, '
 Route::get('/f/{token}', [FormularioController::class, 'acceder'])->name('formularios.acceder');
 
 // Vista para responder un formulario específico (mostrar preguntas)
-Route::get('/formularios/{id}/responder', [FormularioController::class, 'responder'])->name('formularios.responder');
+//Route::get('/formularios/{id}/responder', [FormularioController::class, 'responder'])->name('formularios.responder');
+Route::get('/formularios/{token}/responder', [FormularioController::class, 'responder'])->name('formularios.responder');
+
 
 // Guardar respuestas de un formulario (autenticados o anónimos)
-Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder'])->name('formularios.responder.guardar');
+//Route::post('/formularios/{formulario}/responder', [Contestar_FormularioController::class, 'responder'])->name('formularios.responder.guardar');
+Route::post('/formularios/{token}/responder', [Contestar_FormularioController::class, 'responder'])->name('formularios.responder.guardar');
 
 // Vista anónima directa de un formulario
-Route::get('/formulario_anonimo/{formulario}', [Contestar_FormularioController::class, 'mostrar'])->name('mostrar_anonimos');
+//Route::get('/formulario_anonimo/{formulario}', [Contestar_FormularioController::class, 'mostrar'])->name('mostrar_anonimos');
+Route::get('/formulario_anonimo/{token}', [Contestar_FormularioController::class, 'mostrar'])->name('mostrar_anonimos');
 
 // Iniciar un formulario en modo anónimo (guarda en sesión y redirige)
-Route::get('/anonimo/iniciar/{formulario}', function ($formulario) {
+/*Route::get('/anonimo/iniciar/{formulario}', function ($formulario) {
     session(['acceso_anonimo_formulario' => $formulario]);
     return redirect()->route('mostrar_anonimos', $formulario);
+})->name('anonimo.iniciar');*/
+Route::get('/anonimo/iniciar/{token}', function ($token) {
+
+    session([
+        'acceso_anonimo_formulario' => $token
+    ]);
+
+    return redirect()->route('mostrar_anonimos', $token);
+
 })->name('anonimo.iniciar');
+
 
 // ------------------------------------------------------
 // 🔹 Autenticación (Breeze / Jetstream)
@@ -82,15 +96,15 @@ require __DIR__.'/auth.php';
 // ======================================================
 // Cualquier usuario autenticado (administrador, creador o usuario)
 // puede acceder únicamente al formulario para responderlo.
-Route::middleware('auth')->group(function () {
+/*Route::middleware('auth')->group(function () {
 
     Route::get(
         '/formularios/{formulario}/contestar',
         [Contestar_FormularioController::class, 'mostrar']
     )->name('formularios.contestar');
 
-});
-
+});*/
+Route::get('/formularios/{token}/contestar',[Contestar_FormularioController::class, 'mostrar'])->name('formularios.contestar');
 
 
 
@@ -180,5 +194,6 @@ Route::middleware(['auth','verifica.noUsuario'])->group(function () {
         return view('formularios.loginAnonimo');
     })->name('loginAnonimo');
 
-    Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar'])->name('mostrar');
+    //Route::get('/formularios/{formulario}', [Contestar_FormularioController::class, 'mostrar'])->name('mostrar');
+    Route::get('/formularios/{token}', [Contestar_FormularioController::class, 'mostrar'])->name('mostrar');
 });

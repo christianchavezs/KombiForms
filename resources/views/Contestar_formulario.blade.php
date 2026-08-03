@@ -17,8 +17,13 @@
     </div>
 
     <!--form method="POST" action="{{ url('/formularios/'.$formulario->id.'/responder') }}" class="form-main"-->
-    <form method="POST"
+    <!--form method="POST"
       action="{{ url('/formularios/'.$formulario->id.'/responder') }}"
+      class="form-main"
+      autocomplete="off"-->
+
+    <form method="POST"
+      action="{{ route('formularios.responder.guardar', $formulario->token) }}"
       class="form-main"
       autocomplete="off">
         @csrf

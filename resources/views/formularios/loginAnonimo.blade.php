@@ -99,7 +99,7 @@
 
     {{-- Botón para iniciar encuesta --}}
     <!-- <a href="{{ route('mostrar_anonimos', $formulario->id) }}" class="btn">-->
-        <a href="{{ route('anonimo.iniciar', $formulario->id) }}" class="btn">
+        <a href="{{ route('anonimo.iniciar', $formulario->token) }}" class="btn">
         Iniciar Encuesta
     </a>
     

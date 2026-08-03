@@ -102,6 +102,7 @@ class Contestar_FormularioController extends Controller
     }*/
 
     
+            /*
     public function mostrar(Formulario $formulario)
 {
     $ahora = now();
@@ -174,11 +175,95 @@ class Contestar_FormularioController extends Controller
         ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
         ->header('Pragma', 'no-cache')
         ->header('Expires', '0');
-}
+} */
+
+    public function mostrar($token)
+    {
+        // Buscar el formulario por token en lugar de por ID
+        $formulario = Formulario::where('token', $token)->firstOrFail();
+
+        $ahora = now();
+
+        // ===============================
+        // ACTUALIZAR ESTADO SEGÚN FECHAS (si existen)
+        // ===============================
+        if ($formulario->fecha_inicio || $formulario->fecha_fin) {
+            if (
+                $formulario->fecha_inicio &&
+                $formulario->fecha_inicio <= $ahora &&
+                (
+                    !$formulario->fecha_fin ||
+                    $formulario->fecha_fin > $ahora
+                )
+            ) {
+                $formulario->activo = true; // dentro del rango
+            } else {
+                $formulario->activo = false; // fuera del rango
+            }
+
+            $formulario->save();
+        }
+        // Si no hay fechas, se respeta el campo "activo" tal cual (manual)
+
+        // ===============================
+        // FORMULARIO INACTIVO
+        // ===============================
+        if (!$formulario->activo) {
+            return response()
+                ->view('formularios.formularioCerrado', compact('formulario'))
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
+        }
+
+        // ===============================
+        // VALIDAR ACCESO ANÓNIMO (solo si está activo)
+        // ===============================
+        if (!Auth::check()) {
+
+            $tokenPermitido = session('acceso_formulario_token');
+
+            if ($tokenPermitido !== $token) {
+                return redirect()->route('loginAnonimo');
+            }
+        }
+
+        // Cargar relaciones necesarias
+        $formulario->load('secciones.preguntas.opciones');
+
+        // ===============================
+        // UNA SOLA RESPUESTA POR USUARIO
+        // ===============================
+        if (
+            $formulario->requiere_correo &&
+            $formulario->una_respuesta &&
+            Auth::check()
+        ) {
+            $yaContestado = Respuesta::where('formulario_id', $formulario->id)
+                ->where('correo_respondedor', Auth::user()->email)
+                ->exists();
+
+            if ($yaContestado) {
+                return response()
+                    ->view('formularios.formularioYaContestado', compact('formulario'))
+                    ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                    ->header('Pragma', 'no-cache')
+                    ->header('Expires', '0');
+            }
+        }
+
+        // ===============================
+        // MOSTRAR FORMULARIO
+        // ===============================
+        return response()
+            ->view('Contestar_formulario', compact('formulario'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    }
 
 
-
-
+    /*
 
 public function responder(Request $request, Formulario $formulario)
 {
@@ -279,10 +364,6 @@ public function responder(Request $request, Formulario $formulario)
         }
     });
 
-    // 🔹 Guardar el último formulario anónimo en sesión
-    /* if ($formulario->permitir_anonimo) {
-        session(['ultimo_formulario_anonimo' => $formulario->id]);
-    } */
 
     // 🔹 Guardar el token del último formulario respondido
     session([
@@ -296,7 +377,128 @@ public function responder(Request $request, Formulario $formulario)
     ->header('Pragma', 'no-cache')
     ->header('Expires', '0');
 
-}
+} */
+
+
+    public function responder(Request $request, $token)
+    {
+        // Buscar el formulario por token
+        $formulario = Formulario::where('token', $token)->firstOrFail();
+
+        DB::transaction(function () use ($request, $formulario) {
+
+            $data = [
+                'formulario_id' => $formulario->id
+            ];
+
+            if (!$formulario->permitir_anonimo && Auth::check()) {
+                $data['usuario_id'] = Auth::id();
+                $data['correo_respondedor'] = Auth::user()->email;
+            }
+
+            // Crear respuesta con máxima calificación calculada vía secciones → preguntas
+            $respuesta = new Respuesta($data);
+            $respuesta->puntaje_total = 0;
+
+            $formulario->load('secciones.preguntas');
+
+            $respuesta->maxima_calificacion = $formulario->secciones
+                ->flatMap(fn($s) => $s->preguntas)
+                ->filter(function ($pregunta) {
+                    return $pregunta->tipo === 'opcion_multiple'
+                        || $pregunta->tipo === 'casillas'
+                        || (
+                            in_array($pregunta->tipo, ['texto_corto', 'parrafo'])
+                            && $pregunta->requiere_evaluador
+                        );
+                })
+                ->sum('ponderacion');
+
+            $respuesta->estado = 'pendiente';
+            $respuesta->save();
+
+            // Guardar respuestas individuales
+            foreach ($request->input('respuestas', []) as $preguntaId => $valor) {
+
+                $pregunta = Pregunta::find($preguntaId);
+
+                switch ($pregunta->tipo) {
+
+                    case 'texto_corto':
+                    case 'parrafo':
+                        RespuestaIndividual::create([
+                            'respuesta_id'    => $respuesta->id,
+                            'pregunta_id'     => $preguntaId,
+                            'texto_respuesta' => $valor,
+                        ]);
+                        break;
+
+                    case 'opcion_multiple':
+                        RespuestaIndividual::create([
+                            'respuesta_id' => $respuesta->id,
+                            'pregunta_id'  => $preguntaId,
+                            'opcion_id'    => $valor,
+                        ]);
+                        break;
+
+                    case 'escala_lineal':
+                        RespuestaIndividual::create([
+                            'respuesta_id'   => $respuesta->id,
+                            'pregunta_id'    => $preguntaId,
+                            'valor_numerico' => $valor,
+                        ]);
+                        break;
+
+                    case 'casillas':
+                        foreach ($valor as $opcionId) {
+                            RespuestaIndividual::create([
+                                'respuesta_id' => $respuesta->id,
+                                'pregunta_id'  => $preguntaId,
+                                'opcion_id'    => $opcionId,
+                            ]);
+                        }
+                        break;
+
+                    case 'cuadricula_opciones':
+                        foreach ($valor as $filaId => $opcionId) {
+                            RespuestaIndividual::create([
+                                'respuesta_id' => $respuesta->id,
+                                'pregunta_id'  => $preguntaId,
+                                'fila_id'      => $filaId,
+                                'opcion_id'    => $opcionId,
+                            ]);
+                        }
+                        break;
+
+                    case 'cuadricula_casillas':
+                        foreach ($valor as $filaId => $columnas) {
+                            foreach ($columnas as $opcionId) {
+                                RespuestaIndividual::create([
+                                    'respuesta_id' => $respuesta->id,
+                                    'pregunta_id'  => $preguntaId,
+                                    'fila_id'      => $filaId,
+                                    'opcion_id'    => $opcionId,
+                                ]);
+                            }
+                        }
+                        break;
+                }
+            }
+        });
+
+        // Guardar el token del último formulario respondido
+        session([
+            'ultimo_formulario_token' => $formulario->token
+        ]);
+
+        // Redirección limpia a la vista de gracias
+        return response()
+            ->redirectToRoute('gracias', [], 303)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    }
+
 
 
 
